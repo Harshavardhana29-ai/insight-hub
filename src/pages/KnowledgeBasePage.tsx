@@ -3,10 +3,7 @@ import { motion } from "framer-motion";
 import {
   Search,
   Plus,
-  Link as LinkIcon,
-  FileText,
   Globe,
-  Upload,
   Filter,
   MoreHorizontal,
   Eye,
@@ -21,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,26 +28,20 @@ import {
 interface KnowledgeSource {
   id: string;
   name: string;
-  type: "URL" | "Report" | "API";
+  type: "URL";
   topic: string;
   uploadDate: string;
   status: string;
 }
 
 const mockSources: KnowledgeSource[] = [
-  { id: "1", name: "Gartner AI Hype Cycle 2024", type: "Report", topic: "AI", uploadDate: "2024-03-15", status: "Active" },
+  { id: "1", name: "Gartner AI Hype Cycle 2024", type: "URL", topic: "AI", uploadDate: "2024-03-15", status: "Active" },
   { id: "2", name: "https://techcrunch.com/ai-trends", type: "URL", topic: "Technology", uploadDate: "2024-03-14", status: "Active" },
-  { id: "3", name: "Bloomberg Finance API", type: "API", topic: "Finance", uploadDate: "2024-03-12", status: "Active" },
+  { id: "3", name: "Bloomberg Finance Data Feed", type: "URL", topic: "Finance", uploadDate: "2024-03-12", status: "Active" },
   { id: "4", name: "ESPN Sports Analytics", type: "URL", topic: "Sports", uploadDate: "2024-03-10", status: "Processing" },
-  { id: "5", name: "McKinsey Quarterly Report", type: "Report", topic: "General", uploadDate: "2024-03-08", status: "Active" },
+  { id: "5", name: "McKinsey Industry Insights", type: "URL", topic: "General", uploadDate: "2024-03-08", status: "Active" },
   { id: "6", name: "OpenAI Research Papers", type: "URL", topic: "AI", uploadDate: "2024-03-05", status: "Error" },
 ];
-
-const typeIcons: Record<string, typeof LinkIcon> = {
-  URL: Globe,
-  Report: FileText,
-  API: LinkIcon,
-};
 
 export default function KnowledgeBasePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -134,55 +124,52 @@ export default function KnowledgeBasePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((source, i) => {
-                  const TypeIcon = typeIcons[source.type] || Globe;
-                  return (
-                    <motion.tr
-                      key={source.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                            <TypeIcon className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
+                {filtered.map((source, i) => (
+                  <motion.tr
+                    key={source.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <Globe className="w-4 h-4 text-muted-foreground" />
                         </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-sm text-muted-foreground">{source.type}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <TopicBadge topic={source.topic} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {source.uploadDate}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusIndicator status={source.status} />
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
+                        <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="text-sm text-muted-foreground">{source.type}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <TopicBadge topic={source.topic} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {source.uploadDate}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <StatusIndicator status={source.status} />
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </motion.tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -194,7 +181,7 @@ export default function KnowledgeBasePage() {
           <div className="space-y-3">
             {[
               { action: "Added", source: "Gartner AI Hype Cycle 2024", time: "2 hours ago" },
-              { action: "Updated", source: "Bloomberg Finance API", time: "5 hours ago" },
+              { action: "Updated", source: "Bloomberg Finance Data Feed", time: "5 hours ago" },
               { action: "Removed", source: "Outdated Report Q2", time: "1 day ago" },
             ].map((log, i) => (
               <div key={i} className="flex items-center gap-3 text-sm py-2 px-3 rounded-xl hover:bg-muted/30 transition-colors">
@@ -209,52 +196,34 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload Modal — URL only */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Data Source</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="url" className="mt-2">
-            <TabsList className="w-full">
-              <TabsTrigger value="url" className="flex-1">URL</TabsTrigger>
-              <TabsTrigger value="report" className="flex-1">Report Upload</TabsTrigger>
-              <TabsTrigger value="api" className="flex-1">API Source</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="url" className="space-y-4 mt-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Webpage URL</label>
-                <input type="url" placeholder="https://example.com/report" className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-              <MetadataFields />
-            </TabsContent>
-
-            <TabsContent value="report" className="space-y-4 mt-4">
-              <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/40 transition-colors cursor-pointer">
-                <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm font-semibold text-foreground">Drop files here or click to browse</p>
-                <p className="text-xs text-muted-foreground mt-1">PDF, DOC, CSV — Max 50MB</p>
-              </div>
-              <MetadataFields />
-            </TabsContent>
-
-            <TabsContent value="api" className="space-y-4 mt-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">API Endpoint</label>
-                <input type="url" placeholder="https://api.example.com/data" className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">API Key</label>
-                <input type="password" placeholder="Bearer token or API key" className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-              <MetadataFields />
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-medium text-foreground">Webpage URL</label>
+              <input
+                type="url"
+                placeholder="https://example.com/report"
+                className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <MetadataFields />
+          </div>
 
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
-            <button onClick={() => setShowUploadModal(false)} className="px-4 py-2.5 text-sm rounded-xl hover:bg-accent transition-colors text-muted-foreground font-medium">Cancel</button>
-            <button className="px-5 py-2.5 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-semibold shadow-sm">Add Source</button>
+            <button
+              onClick={() => setShowUploadModal(false)}
+              className="px-4 py-2.5 text-sm rounded-xl hover:bg-accent transition-colors text-muted-foreground font-medium"
+            >
+              Cancel
+            </button>
+            <button className="px-5 py-2.5 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-semibold shadow-sm">
+              Add Source
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -267,11 +236,19 @@ function MetadataFields() {
     <div className="space-y-3">
       <div>
         <label className="text-sm font-medium text-foreground">Title</label>
-        <input type="text" placeholder="Source title" className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
+        <input
+          type="text"
+          placeholder="Source title"
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+        />
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">Description</label>
-        <textarea placeholder="Brief description…" rows={2} className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+        <textarea
+          placeholder="Brief description…"
+          rows={2}
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -286,7 +263,11 @@ function MetadataFields() {
         </div>
         <div>
           <label className="text-sm font-medium text-foreground">Tags</label>
-          <input type="text" placeholder="tag1, tag2" className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            type="text"
+            placeholder="tag1, tag2"
+            className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
       </div>
     </div>

@@ -15,42 +15,51 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 18% 12%;
 
-    --primary: 215 28% 32%;
+    --primary: 204 100% 38%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 12% 93%;
     --secondary-foreground: 210 18% 20%;
 
     --muted: 210 12% 95%;
-    --muted-foreground: 210 8% 50%;
+    --muted-foreground: 213 4% 47%;
 
     --accent: 210 12% 94%;
     --accent-foreground: 210 18% 12%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 100% 46%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 210 12% 90%;
     --input: 210 12% 90%;
-    --ring: 215 28% 32%;
+    --ring: 204 100% 38%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 8% 50%;
-    --sidebar-primary: 215 28% 32%;
+    --sidebar-foreground: 213 4% 47%;
+    --sidebar-primary: 204 100% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 12% 95%;
     --sidebar-accent-foreground: 210 18% 12%;
     --sidebar-border: 210 12% 92%;
-    --sidebar-ring: 215 28% 32%;
+    --sidebar-ring: 204 100% 38%;
 
-    /* Custom tokens */
-    --success: 152 60% 42%;
+    /* Bosch brand tokens */
+    --bosch-blue: 204 100% 38%;
+    --bosch-purple: 303 60% 39%;
+    --bosch-turquoise: 177 69% 30%;
+    --bosch-green: 153 100% 27%;
+    --bosch-gray: 215 4% 47%;
+    --bosch-red: 358 100% 46%;
+    --bosch-yellow: 49 100% 50%;
+
+    /* Semantic tokens */
+    --success: 153 100% 27%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 205 80% 48%;
+    --warning: 49 100% 50%;
+    --warning-foreground: 210 18% 12%;
+    --info: 204 100% 38%;
     --info-foreground: 0 0% 100%;
 
     --surface-elevated: 0 0% 100%;
@@ -60,12 +69,12 @@
     --shadow-md: 0 4px 16px -4px hsl(210 18% 12% / 0.08);
     --shadow-lg: 0 16px 48px -12px hsl(210 18% 12% / 0.12);
 
-    /* Topic colors */
-    --topic-ai: 262 83% 58%;
-    --topic-sports: 152 60% 42%;
-    --topic-finance: 38 92% 50%;
-    --topic-technology: 205 80% 48%;
-    --topic-general: 210 8% 50%;
+    /* Topic colors - using Bosch palette */
+    --topic-ai: 303 60% 39%;
+    --topic-sports: 153 100% 27%;
+    --topic-finance: 49 100% 50%;
+    --topic-technology: 204 100% 38%;
+    --topic-general: 215 4% 47%;
   }
 
   .dark {
@@ -78,7 +87,7 @@
     --popover: 220 14% 9%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 215 30% 45%;
+    --primary: 204 100% 42%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 12% 14%;
@@ -90,21 +99,21 @@
     --accent: 220 12% 14%;
     --accent-foreground: 210 20% 92%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 358 90% 50%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 12% 14%;
     --input: 220 12% 14%;
-    --ring: 215 30% 45%;
+    --ring: 204 100% 42%;
 
     --sidebar-background: 220 14% 8%;
     --sidebar-foreground: 210 8% 55%;
-    --sidebar-primary: 215 30% 45%;
+    --sidebar-primary: 204 100% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 12% 12%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 220 12% 12%;
-    --sidebar-ring: 215 30% 45%;
+    --sidebar-ring: 204 100% 42%;
 
     --surface-elevated: 220 14% 11%;
     --surface-overlay: 220 12% 12%;
