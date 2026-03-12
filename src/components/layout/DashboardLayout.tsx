@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  MessageSquare,
   Database,
+  GitBranch,
   Calendar,
   Bell,
   Moon,
@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const tabs = [
-  { title: "Chat", path: "/", icon: MessageSquare },
   { title: "Knowledge Base", path: "/knowledge", icon: Database },
+  { title: "Workflows", path: "/workflows", icon: GitBranch },
   { title: "Scheduling", path: "/scheduling", icon: Calendar },
 ];
 
