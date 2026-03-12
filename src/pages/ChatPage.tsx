@@ -10,8 +10,8 @@ import {
   MoreHorizontal,
   Sparkles,
   MessageSquare,
+  X,
 } from "lucide-react";
-import { AppHeader } from "@/components/layout/AppHeader";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 
 interface Message {
@@ -84,6 +84,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSidebar, setShowSidebar] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function ChatPage() {
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I'm processing your research query. This is a placeholder response that would come from the `POST /api/mra/chat` endpoint. The response would include structured research data, analysis, and relevant sources.",
+        content: "I'm processing your research query. This is a placeholder response that would come from the `POST /api/mra/chat` endpoint.",
         sources: [{ title: "Research Database", url: "#" }],
         timestamp: new Date(),
       };
@@ -120,176 +121,195 @@ export default function ChatPage() {
   );
 
   return (
-    <>
-      <AppHeader title="Chat" />
-      <div className="flex-1 flex overflow-hidden">
-        {/* Conversation List */}
-        <div className="w-72 border-r border-border bg-card flex flex-col shrink-0">
-          <div className="p-3 space-y-2">
-            <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-              <Plus className="w-4 h-4" />
-              New Chat
-            </button>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search conversations…"
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-md bg-accent border-0 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
-            {filteredConversations.map((convo) => (
-              <button
-                key={convo.id}
-                onClick={() => setSelectedConvo(convo.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
-                  selectedConvo === convo.id
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50 text-foreground"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium truncate pr-2">{convo.title}</span>
-                  {convo.unread && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
-                </div>
-                <div className="flex items-center gap-2">
-                  <TopicBadge topic={convo.topic} />
-                  <span className="text-xs text-muted-foreground truncate">{convo.lastMessage}</span>
-                </div>
+    <div className="flex-1 flex overflow-hidden">
+      {/* Conversation List */}
+      <AnimatePresence>
+        {showSidebar && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 300, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-r border-border bg-card/50 flex flex-col shrink-0 overflow-hidden"
+          >
+            <div className="p-3 space-y-2">
+              <button className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm">
+                <Plus className="w-4 h-4" />
+                New Research
               </button>
-            ))}
-          </div>
-        </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search conversations…"
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-muted border-0 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Chat header */}
-          <div className="h-12 flex items-center justify-between px-6 border-b border-border shrink-0">
+            <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
+              {filteredConversations.map((convo) => (
+                <button
+                  key={convo.id}
+                  onClick={() => setSelectedConvo(convo.id)}
+                  className={`w-full text-left px-3 py-3 rounded-xl transition-all duration-150 ${
+                    selectedConvo === convo.id
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "hover:bg-accent/50 text-foreground"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold truncate pr-2">{convo.title}</span>
+                    {convo.unread && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TopicBadge topic={convo.topic} />
+                    <span className="text-xs text-muted-foreground truncate">{convo.lastMessage}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-background">
+        {/* Chat header */}
+        <div className="h-12 flex items-center justify-between px-4 border-b border-border shrink-0 bg-card/50">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
+            >
+              {showSidebar ? <X className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+            </button>
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">AI Market Analysis 2024</span>
+              <span className="text-sm font-semibold text-foreground">AI Market Analysis 2024</span>
               <TopicBadge topic="AI" />
             </div>
-            <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground">
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
           </div>
+          <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground">
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-            <AnimatePresence>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
+          <AnimatePresence>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[740px] ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-5 py-3"
+                      : "bg-card border border-border rounded-2xl rounded-bl-md px-6 py-5 shadow-sm"
+                  }`}
                 >
-                  <div
-                    className={`max-w-[720px] ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3"
-                        : "bg-card border border-border rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm"
-                    }`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-medium text-primary">MRA Research Agent</span>
+                  {msg.role === "assistant" && (
+                    <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
                       </div>
-                    )}
-                    <div className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "assistant" ? "prose prose-sm max-w-none dark:prose-invert" : ""}`}>
-                      {msg.content}
+                      <span className="text-xs font-bold text-primary tracking-wide uppercase">MRA Research Agent</span>
                     </div>
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-border">
-                        <p className="text-xs font-medium text-muted-foreground mb-2">Sources</p>
-                        <div className="flex flex-wrap gap-2">
-                          {msg.sources.map((s, i) => (
-                            <a
-                              key={i}
-                              href={s.url}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-xs font-medium text-accent-foreground hover:bg-accent/80 transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              {s.title}
-                            </a>
-                          ))}
-                        </div>
+                  )}
+                  <div className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "assistant" ? "prose prose-sm max-w-none dark:prose-invert" : ""}`}>
+                    {msg.content}
+                  </div>
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Sources</p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.sources.map((s, i) => (
+                          <a
+                            key={i}
+                            href={s.url}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-xs font-medium text-foreground hover:bg-accent transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {s.title}
+                          </a>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {isTyping && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-medium text-primary">MRA is researching…</span>
-                  </div>
-                  <div className="flex gap-1 mt-2">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot" style={{ animationDelay: "0s" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot" style={{ animationDelay: "0.3s" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-dot" style={{ animationDelay: "0.6s" }} />
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
+            ))}
+          </AnimatePresence>
 
-          {/* Input */}
-          <div className="border-t border-border bg-card px-6 py-4 shrink-0">
-            <div className="flex items-end gap-3 max-w-[800px] mx-auto">
-              <div className="flex-1 flex items-end gap-2 bg-accent rounded-xl px-4 py-3">
-                <button className="p-1 text-muted-foreground hover:text-foreground shrink-0 mb-0.5">
-                  <Paperclip className="w-4 h-4" />
-                </button>
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  placeholder="Ask the research agent…"
-                  rows={1}
-                  className="flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none min-h-[20px] max-h-[120px]"
-                />
-                <div className="flex items-center gap-2 shrink-0 mb-0.5">
-                  <div className="relative">
-                    <select className="appearance-none bg-background border border-border rounded-md px-2 py-1 text-xs pr-6 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring">
-                      <option>All Topics</option>
-                      <option>AI</option>
-                      <option>Sports</option>
-                      <option>Finance</option>
-                      <option>Technology</option>
-                    </select>
-                    <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+          {isTyping && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+              <div className="bg-card border border-border rounded-2xl rounded-bl-md px-6 py-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
                   </div>
+                  <span className="text-xs font-bold text-primary uppercase tracking-wide">Researching…</span>
+                </div>
+                <div className="flex gap-1.5 mt-3">
+                  <span className="w-2 h-2 rounded-full bg-primary/40 animate-pulse-dot" style={{ animationDelay: "0s" }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/40 animate-pulse-dot" style={{ animationDelay: "0.3s" }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/40 animate-pulse-dot" style={{ animationDelay: "0.6s" }} />
                 </div>
               </div>
-              <button
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className="p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              >
-                <Send className="w-4 h-4" />
+            </motion.div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-border bg-card/60 backdrop-blur-sm px-4 md:px-8 py-4 shrink-0">
+          <div className="flex items-end gap-3 max-w-[800px] mx-auto">
+            <div className="flex-1 flex items-end gap-2 bg-muted rounded-2xl px-4 py-3 border border-border focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
+              <button className="p-1 text-muted-foreground hover:text-foreground shrink-0 mb-0.5 transition-colors">
+                <Paperclip className="w-4 h-4" />
               </button>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="Ask the research agent…"
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none min-h-[20px] max-h-[120px]"
+              />
+              <div className="flex items-center gap-2 shrink-0 mb-0.5">
+                <div className="relative">
+                  <select className="appearance-none bg-card border border-border rounded-lg px-2.5 py-1 text-xs pr-6 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option>All Topics</option>
+                    <option>AI</option>
+                    <option>Sports</option>
+                    <option>Finance</option>
+                    <option>Technology</option>
+                  </select>
+                  <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
             </div>
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className="p-3 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-sm"
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
