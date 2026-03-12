@@ -121,10 +121,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">JD</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">KP</AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden lg:block">
-                  <p className="text-sm font-semibold text-foreground leading-tight">John Doe</p>
+                  <p className="text-sm font-semibold text-foreground leading-tight">Krishna Prakash</p>
                   <p className="text-[11px] text-muted-foreground leading-tight">Bosch Research</p>
                 </div>
                 <ChevronDown className="w-3 h-3 text-muted-foreground hidden lg:block" />
@@ -132,8 +132,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-3 py-2 border-b border-border">
-                <p className="text-sm font-semibold text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">john.doe@bosch.com</p>
+                <p className="text-sm font-semibold text-foreground">Krishna Prakash</p>
+                <p className="text-xs text-muted-foreground">krishna.prakash@bosch.com</p>
               </div>
               <DropdownMenuItem><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
               <DropdownMenuSeparator />
