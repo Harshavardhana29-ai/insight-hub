@@ -132,8 +132,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-3 py-2 border-b border-border">
-                <p className="text-sm font-semibold text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">john.doe@bosch.com</p>
+                <p className="text-sm font-semibold text-foreground">Krishna Prakash</p>
+                <p className="text-xs text-muted-foreground">krishna.prakash@bosch.com</p>
               </div>
               <DropdownMenuItem><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
               <DropdownMenuSeparator />
