@@ -946,7 +946,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
             </Button>
           ) : (
             <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
-              <Check className="w-4 h-4 mr-1" /> Save Job
+              <Check className="w-4 h-4 mr-1" /> {isEdit ? "Update Job" : "Save Job"}
             </Button>
           )}
         </div>
