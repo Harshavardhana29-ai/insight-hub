@@ -174,14 +174,14 @@ export default function SchedulingPage() {
             </div>
           </div>
           {historyEntries.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-12 text-center">
+            <div className="bg-card border border-border rounded-md p-12 text-center">
               <History className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">No history available yet</p>
             </div>
           ) : (
             <div className="space-y-3">
               {historyEntries.map((entry, i) => (
-                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all">
+                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-5 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={entry.status} />
