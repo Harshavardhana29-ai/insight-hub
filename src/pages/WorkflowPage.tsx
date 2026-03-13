@@ -1,31 +1,19 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Plus,
-  GitBranch,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  Bot,
-  Database,
+  Plus, GitBranch, MoreHorizontal, Edit, Trash2, Eye, Bot, Database,
+  Workflow, Zap, BarChart3,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface Workflow {
+interface WorkflowItem {
   id: string;
   title: string;
   dataSources: string[];
@@ -52,46 +40,42 @@ const mockDataSources = [
   { id: "6", name: "OpenAI Research Papers", topic: "AI" },
 ];
 
-const mockWorkflows: Workflow[] = [
+const mockWorkflows: WorkflowItem[] = [
   {
-    id: "1",
-    title: "AI News Digest",
+    id: "1", title: "AI News Digest",
     dataSources: ["Gartner AI Hype Cycle 2024", "OpenAI Research Papers"],
     agents: ["News Aggregator", "Sentiment Analyzer"],
-    topic: "AI",
-    status: "Active",
-    createdAt: "2024-03-15",
+    topic: "AI", status: "Active", createdAt: "2024-03-15",
   },
   {
-    id: "2",
-    title: "Market Trend Analysis",
+    id: "2", title: "Market Trend Analysis",
     dataSources: ["Bloomberg Finance API"],
     agents: ["Trend Detector", "Report Generator"],
-    topic: "Finance",
-    status: "Active",
-    createdAt: "2024-03-12",
+    topic: "Finance", status: "Active", createdAt: "2024-03-12",
   },
   {
-    id: "3",
-    title: "Tech Industry Monitor",
+    id: "3", title: "Tech Industry Monitor",
     dataSources: ["TechCrunch AI Trends"],
     agents: ["News Aggregator", "Data Extractor", "Report Generator"],
-    topic: "Technology",
-    status: "Draft",
-    createdAt: "2024-03-10",
+    topic: "Technology", status: "Draft", createdAt: "2024-03-10",
   },
   {
-    id: "4",
-    title: "Sports Analytics Weekly",
+    id: "4", title: "Sports Analytics Weekly",
     dataSources: ["ESPN Sports Analytics"],
     agents: ["Data Extractor", "Sentiment Analyzer"],
-    topic: "Sports",
-    status: "Active",
-    createdAt: "2024-03-08",
+    topic: "Sports", status: "Active", createdAt: "2024-03-08",
   },
 ];
 
 const topics = ["AI", "Sports", "Finance", "Technology", "General"];
+
+const topicGradient: Record<string, string> = {
+  AI: "gradient-purple",
+  Technology: "gradient-blue",
+  Finance: "gradient-turquoise",
+  Sports: "gradient-green",
+  General: "gradient-blue",
+};
 
 export default function WorkflowPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -121,14 +105,16 @@ export default function WorkflowPage() {
     setSelectedIndividualSources([]);
   };
 
+  const filteredWorkflows = workflows.filter((w) => selectedTopic === "all" || w.topic === selectedTopic);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-6xl mx-auto p-6 space-y-6 animate-fade-in">
-        {/* Top bar */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <GitBranch className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center shadow-sm">
+              <GitBranch className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Workflows</h2>
@@ -138,27 +124,50 @@ export default function WorkflowPage() {
             </div>
           </div>
           <button
-            onClick={() => {
-              resetForm();
-              setShowCreateModal(true);
-            }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm"
+            onClick={() => { resetForm(); setShowCreateModal(true); }}
+            className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
           >
             <Plus className="w-4 h-4" />
             Create Workflow
           </button>
         </div>
 
-        {/* Filter */}
+        {/* Stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Total", value: workflows.length, icon: Workflow, gradient: "gradient-blue" },
+            { label: "Active", value: workflows.filter(w => w.status === "Active").length, icon: Zap, gradient: "gradient-green" },
+            { label: "Draft", value: workflows.filter(w => w.status === "Draft").length, icon: Edit, gradient: "gradient-purple" },
+            { label: "Agents Used", value: new Set(workflows.flatMap(w => w.agents)).size, icon: Bot, gradient: "gradient-turquoise" },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
+                <div className={`w-9 h-9 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                  <stat.icon className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </div>
+              <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           {["all", ...topics].map((t) => (
             <button
               key={t}
               onClick={() => setSelectedTopic(t)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 selectedTopic === t
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
+                  ? "gradient-blue text-primary-foreground shadow-colored"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
               }`}
             >
               {t === "all" ? "All" : t}
@@ -168,20 +177,21 @@ export default function WorkflowPage() {
 
         {/* Workflow Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {workflows
-            .filter((w) => selectedTopic === "all" || w.topic === selectedTopic)
-            .map((workflow, i) => (
-              <motion.div
-                key={workflow.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start justify-between mb-3">
+          {filteredWorkflows.map((workflow, i) => (
+            <motion.div
+              key={workflow.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-all group"
+            >
+              {/* Colored top accent bar */}
+              <div className={`h-1 ${topicGradient[workflow.topic] || "gradient-blue"}`} />
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <GitBranch className="w-5 h-5 text-primary" />
+                    <div className={`w-10 h-10 rounded-xl ${topicGradient[workflow.topic] || "gradient-blue"} flex items-center justify-center shadow-sm`}>
+                      <GitBranch className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-foreground">{workflow.title}</h3>
@@ -210,8 +220,8 @@ export default function WorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Data Sources</p>
                     <div className="flex flex-wrap gap-1.5">
                       {workflow.dataSources.map((ds) => (
-                        <span key={ds} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-xs text-foreground">
-                          <Database className="w-3 h-3 text-muted-foreground" />
+                        <span key={ds} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
+                          <Database className="w-3 h-3" />
                           {ds}
                         </span>
                       ))}
@@ -221,7 +231,7 @@ export default function WorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Agents</p>
                     <div className="flex flex-wrap gap-1.5">
                       {workflow.agents.map((agent) => (
-                        <span key={agent} className="inline-flex items-center gap-1 px-2 py-1 bg-info/10 rounded-md text-xs text-info">
+                        <span key={agent} className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-purple/10 rounded-lg text-xs font-medium text-bosch-purple">
                           <Bot className="w-3 h-3" />
                           {agent}
                         </span>
@@ -232,8 +242,9 @@ export default function WorkflowPage() {
                     <TopicBadge topic={workflow.topic} />
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 
@@ -244,7 +255,6 @@ export default function WorkflowPage() {
             <DialogTitle>Create Workflow</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 mt-2">
-            {/* Title */}
             <div>
               <label className="text-sm font-medium text-foreground">Workflow Title</label>
               <input
@@ -254,26 +264,25 @@ export default function WorkflowPage() {
               />
             </div>
 
-            {/* Data Sources */}
             <div>
               <label className="text-sm font-medium text-foreground">Data Sources</label>
               <div className="flex gap-2 mt-1.5 mb-3">
                 <button
                   onClick={() => setSourceSelectionMode("topic")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     sourceSelectionMode === "topic"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "gradient-blue text-primary-foreground shadow-sm"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   By Topic
                 </button>
                 <button
                   onClick={() => setSourceSelectionMode("individual")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                     sourceSelectionMode === "individual"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "gradient-blue text-primary-foreground shadow-sm"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Individual Sources
@@ -296,14 +305,14 @@ export default function WorkflowPage() {
                     <label
                       key={ds.id}
                       className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedIndividualSources.includes(ds.id) ? "bg-primary/10" : "hover:bg-muted"
+                        selectedIndividualSources.includes(ds.id) ? "bg-accent" : "hover:bg-muted"
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedIndividualSources.includes(ds.id)}
                         onChange={() => toggleSource(ds.id)}
-                        className="rounded border-border"
+                        className="rounded border-border accent-[hsl(202,100%,38%)]"
                       />
                       <span className="text-sm text-foreground flex-1">{ds.name}</span>
                       <TopicBadge topic={ds.topic} />
@@ -313,7 +322,6 @@ export default function WorkflowPage() {
               )}
             </div>
 
-            {/* Agent Selection */}
             <div>
               <label className="text-sm font-medium text-foreground">Agents</label>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">Select one or more agents for this workflow</p>
@@ -322,10 +330,10 @@ export default function WorkflowPage() {
                   <button
                     key={agent}
                     onClick={() => toggleAgent(agent)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border ${
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all border ${
                       selectedAgents.includes(agent)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground border-border hover:border-primary/40"
+                        ? "gradient-purple text-primary-foreground border-transparent shadow-sm"
+                        : "bg-card text-foreground border-border hover:border-bosch-purple/40 hover:bg-bosch-purple/5"
                     }`}
                   >
                     <Bot className="w-3.5 h-3.5" />
@@ -343,7 +351,7 @@ export default function WorkflowPage() {
             >
               Cancel
             </button>
-            <button className="px-5 py-2.5 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-semibold shadow-sm">
+            <button className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
               Create Workflow
             </button>
           </div>
