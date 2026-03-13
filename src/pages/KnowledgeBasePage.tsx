@@ -30,8 +30,6 @@ const mockSources: KnowledgeSource[] = [
 
 const stats = [
   { label: "Total Sources", value: "24", change: "+3 this week", icon: Database, gradient: "gradient-blue" },
-  { label: "Active", value: "19", change: "79% uptime", icon: TrendingUp, gradient: "gradient-green" },
-  { label: "Processing", value: "3", change: "~2 min avg", icon: Layers, gradient: "gradient-purple" },
   { label: "Topics", value: "5", change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
 ];
 
