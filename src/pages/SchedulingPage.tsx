@@ -4,7 +4,7 @@ import {
   Plus, Play, Pause, Edit, Calendar, Clock, ArrowLeft, Download,
   History, GitBranch, Bot, Search, ChevronLeft,
   ChevronRight, Check, X, Tag, Cpu, Send, ShieldAlert, Eye,
-  Activity, AlertTriangle, Zap, Timer, FileText,
+  Activity, AlertTriangle, Zap, Timer, FileText, Trash2,
 } from "lucide-react";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
