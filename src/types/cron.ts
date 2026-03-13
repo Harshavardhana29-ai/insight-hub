@@ -57,6 +57,7 @@ export interface ScheduledJob {
   status: JobStatus;
   notify: boolean;
   enabled: boolean;
+  jobsDone: number;
   userPrompt?: string;
   cronExpression?: string;
   timezone?: string;
