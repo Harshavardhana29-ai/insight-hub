@@ -477,71 +477,10 @@ export default function SchedulingPage() {
   );
 }
 
-// ─── Edit Schedule Modal ─────────────────────────────────────
-function EditScheduleModal({ job, onClose, onSave }: { job: ScheduledJob | null; onClose: () => void; onSave: (job: ScheduledJob) => void }) {
-  const [editData, setEditData] = useState<ScheduledJob | null>(null);
-
-  useState(() => {
-    if (job) setEditData({ ...job });
-  });
-
-  // Sync when job changes
-  if (job && editData?.id !== job.id) {
-    setEditData({ ...job });
-  }
-
-  if (!job || !editData) return null;
-
-  return (
-    <Dialog open={!!job} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg rounded-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="w-5 h-5 text-primary" />
-            Edit Schedule
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Job Name</Label>
-            <Input value={editData.jobName} onChange={(e) => setEditData({ ...editData, jobName: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Workflow</Label>
-            <Select value={editData.workflowId} onValueChange={(v) => {
-              const wf = mockWorkflows.find(w => w.id === v);
-              setEditData({ ...editData, workflowId: v, workflowTitle: wf?.title || "—" });
-            }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {mockWorkflows.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Schedule Time</Label>
-            <Input value={editData.scheduleTime} onChange={(e) => setEditData({ ...editData, scheduleTime: e.target.value })} />
-          </div>
-          <div className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/50">
-            <span className="text-sm font-medium text-foreground">Enabled</span>
-            <Switch checked={editData.enabled} onCheckedChange={(v) => setEditData({ ...editData, enabled: v, status: v ? "active" : "paused" })} />
-          </div>
-        </div>
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose} className="rounded-md">Cancel</Button>
-          <Button onClick={() => onSave(editData)} className="gradient-blue text-primary-foreground border-0 rounded-md">Save Changes</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Create Schedule Wizard ──────────────────────────────────
-function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void }) {
+// ─── Create/Edit Schedule Wizard ──────────────────────────────────
+function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean }) {
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<CreateJobFormData>(initialForm);
+  const [form, setForm] = useState<CreateJobFormData>(initialData || initialForm);
 
   const update = <K extends keyof CreateJobFormData>(key: K, value: CreateJobFormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
