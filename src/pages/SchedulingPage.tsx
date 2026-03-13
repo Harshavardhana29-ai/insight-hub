@@ -395,11 +395,11 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-colored">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-md gradient-blue flex items-center justify-center shadow-colored">
             <Timer className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
@@ -409,13 +409,13 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
         </div>
 
         {/* Step indicators */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-3">
           {STEPS.map((s, i) => (
             <button
               key={s.label}
               onClick={() => i <= step && setStep(i)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 i === step ? "gradient-blue text-primary-foreground shadow-colored" :
                 i < step ? "bg-bosch-green/10 text-bosch-green" :
                 "bg-muted text-muted-foreground"
@@ -427,9 +427,9 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
           ))}
         </div>
 
-        {/* Step Content */}
-        <Card className="shadow-sm">
-          <CardContent className="p-6 space-y-5">
+        {/* Scrollable Step Content */}
+        <Card className="shadow-sm rounded-md flex-1 min-h-0 overflow-hidden flex flex-col">
+          <CardContent className="p-6 space-y-5 overflow-y-auto flex-1">
             <h3 className="text-base font-bold text-foreground">{STEPS[step].label}</h3>
 
             {/* Step 0: Identity */}
