@@ -2,12 +2,12 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, Play, Pause, Edit, Calendar, Clock, ArrowLeft, Download,
-  Bell, BellOff, History, GitBranch, Bot, Search, ChevronLeft,
+  History, GitBranch, Bot, Search, ChevronLeft,
   ChevronRight, Check, X, Tag, Cpu, Send, ShieldAlert, Eye,
-  Activity, AlertTriangle, Zap, Timer,
+  Activity, AlertTriangle, Zap, Timer, FileText,
 } from "lucide-react";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,14 @@ import { format } from "date-fns";
 import type {
   CreateJobFormData, ScheduledJob, HistoryEntry, JobStatus,
   OutputDelivery, OutputFormat, WakeMode, ConcurrencyPolicy,
-  BackoffStrategy, EscalationChannel,
 } from "@/types/cron";
 
 // ─── Mock Data ───────────────────────────────────────────────
+const MOCK_USER = {
+  name: "Krishna Prakash",
+  email: "krishna.prakash@bosch.com",
+};
+
 const mockWorkflows = [
   { id: "1", title: "AI News Digest" },
   { id: "2", title: "Market Trend Analysis" },
@@ -37,11 +41,11 @@ const mockWorkflows = [
 ];
 
 const initialJobs: ScheduledJob[] = [
-  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: true, enabled: true },
-  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: true, enabled: true },
+  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true },
+  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: false, enabled: true },
   { id: "3", jobName: "Monthly Finance Summary", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true },
   { id: "4", jobName: "Sports Update Evening", type: "Daily", workflowId: "4", workflowTitle: "Sports Analytics Weekly", scheduleTime: "18:00", nextRun: "—", lastRun: "Mar 10", status: "paused", notify: false, enabled: false },
-  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: true, enabled: true },
+  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: false, enabled: true },
 ];
 
 const mockHistory: Record<string, HistoryEntry[]> = {
@@ -74,6 +78,14 @@ const STEPS = [
   { label: "Review", icon: Eye },
 ];
 
+const DELAY_OPTIONS = [
+  { value: "60", label: "60 seconds" },
+  { value: "120", label: "120 seconds" },
+  { value: "180", label: "180 seconds" },
+  { value: "240", label: "240 seconds" },
+  { value: "300", label: "300 seconds" },
+];
+
 const initialForm: CreateJobFormData = {
   name: "", userPrompt: "", workflowId: "", enabled: true,
   scheduleType: "recurring", cronExpression: "0 * * * *", oneTimeDate: "", timezone: "UTC",
@@ -81,7 +93,7 @@ const initialForm: CreateJobFormData = {
   outputBehavior: {
     expectedOutputFormat: "markdown", outputSchema: "",
     deliveryMethods: ["internal-log"], storeStdout: true, storeStderr: true,
-    retentionDays: 30, maxSizeKb: 10240, outlookEmail: "", teamsWebhook: "",
+    retentionDays: 30, maxSizeKb: 10240, outlookEmail: MOCK_USER.email, teamsWebhook: MOCK_USER.email,
   },
   failureBehavior: {
     concurrency: "skip",
@@ -97,6 +109,8 @@ export default function SchedulingPage() {
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [editJob, setEditJob] = useState<ScheduledJob | null>(null);
+  const [previewEntry, setPreviewEntry] = useState<HistoryEntry | null>(null);
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
@@ -123,10 +137,6 @@ export default function SchedulingPage() {
     );
   };
 
-  const toggleNotify = (id: string) => {
-    setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, notify: !j.notify } : j)));
-  };
-
   const handleSaveJob = (form: CreateJobFormData) => {
     const wf = mockWorkflows.find(w => w.id === form.workflowId);
     const newJob: ScheduledJob = {
@@ -139,7 +149,7 @@ export default function SchedulingPage() {
       nextRun: "Pending",
       lastRun: "—",
       status: form.enabled ? "active" : "paused",
-      notify: form.outputBehavior.deliveryMethods.includes("outlook") || form.outputBehavior.deliveryMethods.includes("teams"),
+      notify: false,
       enabled: form.enabled,
       userPrompt: form.userPrompt,
       cronExpression: form.cronExpression,
@@ -151,6 +161,11 @@ export default function SchedulingPage() {
     };
     setJobs(prev => [newJob, ...prev]);
     setShowCreateWizard(false);
+  };
+
+  const handleEditSave = (updatedJob: ScheduledJob) => {
+    setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+    setEditJob(null);
   };
 
   // ─── History View ────────────────────────────────────────
@@ -190,9 +205,17 @@ export default function SchedulingPage() {
                         <p className="text-xs text-muted-foreground">Duration: {entry.duration}</p>
                       </div>
                     </div>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
-                      <Download className="w-3.5 h-3.5" /> Download
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPreviewEntry(entry)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Preview
+                      </button>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </button>
+                    </div>
                   </div>
                   <p className="text-sm text-foreground mb-3">{entry.description}</p>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -204,6 +227,48 @@ export default function SchedulingPage() {
             </div>
           )}
         </div>
+
+        {/* Preview Modal */}
+        <Dialog open={!!previewEntry} onOpenChange={() => setPreviewEntry(null)}>
+          <DialogContent className="max-w-2xl rounded-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Run Preview — {previewEntry?.runDate}
+              </DialogTitle>
+            </DialogHeader>
+            {previewEntry && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-md bg-accent/30 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Status</p>
+                    <StatusIndicator status={previewEntry.status} />
+                  </div>
+                  <div className="p-3 rounded-md bg-accent/30 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                    <p className="text-sm font-semibold text-foreground">{previewEntry.duration}</p>
+                  </div>
+                </div>
+                <div className="p-3 rounded-md bg-accent/30 border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Workflow</p>
+                  <p className="text-sm font-semibold text-foreground">{previewEntry.workflow}</p>
+                </div>
+                <div className="p-3 rounded-md bg-accent/30 border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Agents Used</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {previewEntry.agents.map((a) => (
+                      <Badge key={a} variant="secondary" className="text-xs">{a}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-3 rounded-md bg-accent/30 border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Output</p>
+                  <p className="text-sm text-foreground">{previewEntry.description}</p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -241,12 +306,7 @@ export default function SchedulingPage() {
             { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
             { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
           ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-            >
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
               <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm hover:shadow-md transition-all`}>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-md ${stat.iconBg} flex items-center justify-center`}>
@@ -270,30 +330,25 @@ export default function SchedulingPage() {
           </div>
           <div className="flex gap-1.5 flex-wrap">
             <Button
-              variant={statusFilter === "all" ? "default" : "outline"}
-              size="sm"
+              variant={statusFilter === "all" ? "default" : "outline"} size="sm"
               onClick={() => setStatusFilter("all")}
               className={statusFilter === "all" ? "gradient-blue text-primary-foreground border-0" : ""}
-            >
-              All
-            </Button>
+            >All</Button>
             {statusFilters.map((s) => (
               <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}
                 className={statusFilter === s ? "gradient-blue text-primary-foreground border-0" : ""}
-              >
-                {statusConfig[s].label}
-              </Button>
+              >{statusConfig[s].label}</Button>
             ))}
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table — removed Notify column */}
         <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-primary bg-primary">
-                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Notify", "Actions"].map((h) => (
+                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Actions"].map((h) => (
                     <th key={h} className={`text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
                     </th>
@@ -323,14 +378,9 @@ export default function SchedulingPage() {
                         {statusConfig[job.status]?.label || job.status}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4">
-                      <button onClick={() => toggleNotify(job.id)} className={`p-1.5 rounded-lg transition-colors ${job.notify ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-accent"}`}>
-                        {job.notify ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                      </button>
-                    </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
+                        <button onClick={() => setEditJob(job)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-bosch-green hover:bg-bosch-green/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
@@ -344,14 +394,78 @@ export default function SchedulingPage() {
                   </motion.tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <EditScheduleModal job={editJob} onClose={() => setEditJob(null)} onSave={handleEditSave} />
     </div>
+  );
+}
+
+// ─── Edit Schedule Modal ─────────────────────────────────────
+function EditScheduleModal({ job, onClose, onSave }: { job: ScheduledJob | null; onClose: () => void; onSave: (job: ScheduledJob) => void }) {
+  const [editData, setEditData] = useState<ScheduledJob | null>(null);
+
+  useState(() => {
+    if (job) setEditData({ ...job });
+  });
+
+  // Sync when job changes
+  if (job && editData?.id !== job.id) {
+    setEditData({ ...job });
+  }
+
+  if (!job || !editData) return null;
+
+  return (
+    <Dialog open={!!job} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-lg rounded-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="w-5 h-5 text-primary" />
+            Edit Schedule
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Job Name</Label>
+            <Input value={editData.jobName} onChange={(e) => setEditData({ ...editData, jobName: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Workflow</Label>
+            <Select value={editData.workflowId} onValueChange={(v) => {
+              const wf = mockWorkflows.find(w => w.id === v);
+              setEditData({ ...editData, workflowId: v, workflowTitle: wf?.title || "—" });
+            }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {mockWorkflows.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>{w.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Schedule Time</Label>
+            <Input value={editData.scheduleTime} onChange={(e) => setEditData({ ...editData, scheduleTime: e.target.value })} />
+          </div>
+          <div className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/50">
+            <span className="text-sm font-medium text-foreground">Enabled</span>
+            <Switch checked={editData.enabled} onCheckedChange={(v) => setEditData({ ...editData, enabled: v, status: v ? "active" : "paused" })} />
+          </div>
+        </div>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={onClose} className="rounded-md">Cancel</Button>
+          <Button onClick={() => onSave(editData)} className="gradient-blue text-primary-foreground border-0 rounded-md">Save Changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -378,6 +492,35 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
 
   const cronValidation = validateCronExpression(form.cronExpression);
   const nextExecs = form.scheduleType === "recurring" ? getNextExecutions(form.cronExpression, 5) : [];
+
+  // Build cron from preset + time
+  const [selectedPreset, setSelectedPreset] = useState("0 * * * *");
+  const [cronHour, setCronHour] = useState("09");
+  const [cronMinute, setCronMinute] = useState("00");
+
+  const buildCronFromTime = (preset: string, hour: string, minute: string) => {
+    // Replace minute and hour fields in the preset
+    const parts = preset.split(/\s+/);
+    if (parts.length === 5) {
+      parts[0] = String(parseInt(minute));
+      parts[1] = String(parseInt(hour));
+      return parts.join(" ");
+    }
+    return preset;
+  };
+
+  const handlePresetChange = (presetExpr: string) => {
+    setSelectedPreset(presetExpr);
+    const newCron = buildCronFromTime(presetExpr, cronHour, cronMinute);
+    update("cronExpression", newCron);
+  };
+
+  const handleTimeChange = (hour: string, minute: string) => {
+    setCronHour(hour);
+    setCronMinute(minute);
+    const newCron = buildCronFromTime(selectedPreset, hour, minute);
+    update("cronExpression", newCron);
+  };
 
   const canProceed = (): boolean => {
     switch (step) {
@@ -464,7 +607,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
               </>
             )}
 
-            {/* Step 1: Schedule */}
+            {/* Step 1: Schedule — No editable cron, presets + time selection */}
             {step === 1 && (
               <>
                 {form.scheduleType === "recurring" && cronValidation.valid && (
@@ -478,34 +621,46 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                     variant={form.scheduleType === "recurring" ? "default" : "outline"} size="sm"
                     onClick={() => update("scheduleType", "recurring")}
                     className={form.scheduleType === "recurring" ? "gradient-blue text-primary-foreground border-0" : ""}
-                  >
-                    Recurring (Cron)
-                  </Button>
+                  >Recurring</Button>
                   <Button
                     variant={form.scheduleType === "one-time" ? "default" : "outline"} size="sm"
                     onClick={() => update("scheduleType", "one-time")}
                     className={form.scheduleType === "one-time" ? "gradient-blue text-primary-foreground border-0" : ""}
-                  >
-                    One-Time
-                  </Button>
+                  >One-Time</Button>
                 </div>
                 {form.scheduleType === "recurring" ? (
                   <>
                     <div className="space-y-2">
-                      <Label>Cron Expression</Label>
-                      <Input value={form.cronExpression} onChange={(e) => update("cronExpression", e.target.value)} placeholder="* * * * *" className={cn("font-mono text-sm", !cronValidation.valid && form.cronExpression && "border-destructive")} />
-                      {form.cronExpression && !cronValidation.valid && (
-                        <div className="text-xs text-destructive">{cronValidation.errors.join(", ")}</div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Presets</Label>
+                      <Label>Frequency</Label>
                       <div className="flex flex-wrap gap-1.5">
                         {CRON_PRESETS.map((p) => (
-                          <Button key={p.expression} variant={form.cronExpression === p.expression ? "default" : "outline"} size="sm" className={cn("text-xs h-7", form.cronExpression === p.expression && "gradient-blue text-primary-foreground border-0")} onClick={() => update("cronExpression", p.expression)}>
-                            {p.label}
-                          </Button>
+                          <Button key={p.expression} variant={selectedPreset === p.expression ? "default" : "outline"} size="sm"
+                            className={cn("text-xs h-7", selectedPreset === p.expression && "gradient-blue text-primary-foreground border-0")}
+                            onClick={() => handlePresetChange(p.expression)}
+                          >{p.label}</Button>
                         ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Time</Label>
+                      <div className="flex items-center gap-2">
+                        <Select value={cronHour} onValueChange={(v) => handleTimeChange(v, cronMinute)}>
+                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                              <SelectItem key={h} value={h}>{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-lg font-bold text-muted-foreground">:</span>
+                        <Select value={cronMinute} onValueChange={(v) => handleTimeChange(cronHour, v)}>
+                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     {cronValidation.valid && nextExecs.length > 0 && (
@@ -560,19 +715,31 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
               </div>
             )}
 
-            {/* Step 3: Output */}
+            {/* Step 3: Output — simplified */}
             {step === 3 && (
               <>
                 <div className="space-y-2">
                   <Label>Expected Output Format</Label>
-                  <Select value={form.outputBehavior.expectedOutputFormat} onValueChange={(v) => updateOutput({ expectedOutputFormat: v as OutputFormat })}>
+                  <Select
+                    value={form.outputBehavior.expectedOutputFormat === "pdf" ? "markdown" : form.outputBehavior.expectedOutputFormat}
+                    onValueChange={(v) => updateOutput({ expectedOutputFormat: v as OutputFormat })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="markdown">Markdown</SelectItem>
                       <SelectItem value="plain-text">Plain Text</SelectItem>
-                      <SelectItem value="pdf">PDF</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/50">
+                  <div>
+                    <span className="text-sm font-medium text-foreground">Export as PDF</span>
+                    <p className="text-xs text-muted-foreground">Also generate a PDF version of the output</p>
+                  </div>
+                  <Switch
+                    checked={form.outputBehavior.expectedOutputFormat === "pdf"}
+                    onCheckedChange={(v) => updateOutput({ expectedOutputFormat: v ? "pdf" : "markdown" })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Output Schema (optional)</Label>
@@ -591,51 +758,28 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                         variant={form.outputBehavior.deliveryMethods.includes(m.key) ? "default" : "outline"} size="sm"
                         onClick={() => toggleDelivery(m.key)}
                         className={form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : ""}
-                      >
-                        {m.label}
-                      </Button>
+                      >{m.label}</Button>
                     ))}
                   </div>
                 </div>
                 {form.outputBehavior.deliveryMethods.includes("outlook") && (
                   <div className="space-y-2">
                     <Label>Outlook Email</Label>
-                    <Input value={form.outputBehavior.outlookEmail} onChange={(e) => updateOutput({ outlookEmail: e.target.value })} placeholder="user@company.com" />
+                    <Input value={MOCK_USER.email} disabled className="bg-muted/50 cursor-not-allowed" />
+                    <p className="text-[11px] text-muted-foreground">Auto-filled from your profile</p>
                   </div>
                 )}
                 {form.outputBehavior.deliveryMethods.includes("teams") && (
                   <div className="space-y-2">
-                    <Label>Teams Webhook URL</Label>
-                    <Input value={form.outputBehavior.teamsWebhook} onChange={(e) => updateOutput({ teamsWebhook: e.target.value })} placeholder="https://outlook.office.com/webhook/..." className="font-mono text-sm" />
-                  </div>
-                )}
-                {form.outputBehavior.deliveryMethods.includes("internal-log") && (
-                  <div className="space-y-3 border-t pt-4">
-                    <p className="text-sm font-semibold text-foreground">Log Storage</p>
-                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
-                      <span className="text-sm text-muted-foreground">Store stdout</span>
-                      <Switch checked={form.outputBehavior.storeStdout} onCheckedChange={(v) => updateOutput({ storeStdout: v })} />
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
-                      <span className="text-sm text-muted-foreground">Store stderr</span>
-                      <Switch checked={form.outputBehavior.storeStderr} onCheckedChange={(v) => updateOutput({ storeStderr: v })} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Retention (days)</Label>
-                        <Input type="number" value={form.outputBehavior.retentionDays} onChange={(e) => updateOutput({ retentionDays: parseInt(e.target.value) || 1 })} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Max Size (KB)</Label>
-                        <Input type="number" value={form.outputBehavior.maxSizeKb} onChange={(e) => updateOutput({ maxSizeKb: parseInt(e.target.value) || 1 })} />
-                      </div>
-                    </div>
+                    <Label>Teams Email</Label>
+                    <Input value={MOCK_USER.email} disabled className="bg-muted/50 cursor-not-allowed" />
+                    <p className="text-[11px] text-muted-foreground">Auto-filled from your profile</p>
                   </div>
                 )}
               </>
             )}
 
-            {/* Step 4: Failure */}
+            {/* Step 4: Failure — no backoff, no escalation, dropdown for delay & attempts */}
             {step === 4 && (
               <>
                 <div className="space-y-2">
@@ -655,55 +799,34 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                     <Switch checked={form.failureBehavior.retry.enabled} onCheckedChange={(v) => updateFailure({ retry: { ...form.failureBehavior.retry, enabled: v } })} />
                   </div>
                   {form.failureBehavior.retry.enabled && (
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Max Attempts</Label>
-                        <Input type="number" value={form.failureBehavior.retry.maxAttempts} onChange={(e) => updateFailure({ retry: { ...form.failureBehavior.retry, maxAttempts: parseInt(e.target.value) || 1 } })} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Delay (sec)</Label>
-                        <Input type="number" value={form.failureBehavior.retry.delaySeconds} onChange={(e) => updateFailure({ retry: { ...form.failureBehavior.retry, delaySeconds: parseInt(e.target.value) || 0 } })} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Backoff</Label>
-                        <Select value={form.failureBehavior.retry.backoff} onValueChange={(v) => updateFailure({ retry: { ...form.failureBehavior.retry, backoff: v as BackoffStrategy } })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fixed">Fixed</SelectItem>
-                            <SelectItem value="exponential">Exponential</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
-                    <span className="text-sm font-medium text-foreground">Escalate after all retries fail</span>
-                    <Switch checked={form.failureBehavior.escalationEnabled} onCheckedChange={(v) => updateFailure({ escalationEnabled: v })} />
-                  </div>
-                  {form.failureBehavior.escalationEnabled && (
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Channel</Label>
-                        <Select value={form.failureBehavior.escalationChannel || ""} onValueChange={(v) => updateFailure({ escalationChannel: v as EscalationChannel })}>
-                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <Label className="text-xs">Max Attempts</Label>
+                        <Select value={String(form.failureBehavior.retry.maxAttempts)} onValueChange={(v) => updateFailure({ retry: { ...form.failureBehavior.retry, maxAttempts: parseInt(v) } })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="webhook">Webhook</SelectItem>
-                            <SelectItem value="in-app">In-App</SelectItem>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Contact</Label>
-                        <Input value={form.failureBehavior.escalationContact || ""} onChange={(e) => updateFailure({ escalationContact: e.target.value })} placeholder="oncall@company.com" />
+                        <Label className="text-xs">Delay</Label>
+                        <Select value={String(form.failureBehavior.retry.delaySeconds)} onValueChange={(v) => updateFailure({ retry: { ...form.failureBehavior.retry, delaySeconds: parseInt(v) } })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {DELAY_OPTIONS.map((d) => (
+                              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}
                 </div>
                 <div className="space-y-2 border-t pt-4">
-                  <Label>Auto-disable after N consecutive failures (0 = disabled)</Label>
+                  <Label>Auto-disable(stop) the job after N consecutive Failures (0 = disabled)</Label>
                   <Input type="number" value={form.failureBehavior.autoDisableAfter} onChange={(e) => updateFailure({ autoDisableAfter: parseInt(e.target.value) || 0 })} />
                 </div>
               </>
@@ -731,7 +854,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       { k: "Delivery", v: form.outputBehavior.deliveryMethods.join(", ") },
                     ]},
                   ].map((section) => (
-                    <div key={section.title} className="p-4 rounded-xl bg-accent/30 border border-border">
+                    <div key={section.title} className="p-4 rounded-md bg-accent/30 border border-border">
                       <h4 className="text-sm font-bold text-foreground mb-2">{section.title}</h4>
                       {section.items.map((item, idx) => (
                         <p key={idx} className="text-sm text-muted-foreground">
@@ -740,17 +863,14 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       ))}
                     </div>
                   ))}
-                  <div className="p-4 rounded-xl bg-accent/30 border border-border md:col-span-2">
+                  <div className="p-4 rounded-md bg-accent/30 border border-border md:col-span-2">
                     <h4 className="text-sm font-bold text-foreground mb-2">Failure</h4>
                     <p className="text-sm text-muted-foreground">Concurrency: <span className="text-foreground font-medium">{form.failureBehavior.concurrency}</span></p>
-                    <p className="text-sm text-muted-foreground">Retries: <span className="text-foreground font-medium">{form.failureBehavior.retry.enabled ? `${form.failureBehavior.retry.maxAttempts} attempts, ${form.failureBehavior.retry.backoff}` : "Disabled"}</span></p>
-                    {form.failureBehavior.escalationEnabled && (
-                      <p className="text-sm text-muted-foreground">Escalation: <span className="text-foreground font-medium">{form.failureBehavior.escalationChannel}</span></p>
-                    )}
+                    <p className="text-sm text-muted-foreground">Retries: <span className="text-foreground font-medium">{form.failureBehavior.retry.enabled ? `${form.failureBehavior.retry.maxAttempts} attempts, ${form.failureBehavior.retry.delaySeconds}s delay` : "Disabled"}</span></p>
                   </div>
                 </div>
                 {form.userPrompt && (
-                  <div className="p-4 rounded-xl bg-bosch-purple/5 border border-bosch-purple/20">
+                  <div className="p-4 rounded-md bg-bosch-purple/5 border border-bosch-purple/20">
                     <h4 className="text-sm font-bold text-foreground mb-1">User Prompt</h4>
                     <p className="text-sm text-muted-foreground">{form.userPrompt}</p>
                   </div>

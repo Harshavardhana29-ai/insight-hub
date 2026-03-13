@@ -25,7 +25,7 @@ import {
 const tabs = [
   { title: "Knowledge Base", path: "/knowledge", icon: Database },
   { title: "Workflows", path: "/workflows", icon: GitBranch },
-  { title: "Scheduling", path: "/scheduling", icon: Calendar },
+  { title: "Scheduler", path: "/scheduling", icon: Calendar },
 ];
 
 interface DashboardLayoutProps {
