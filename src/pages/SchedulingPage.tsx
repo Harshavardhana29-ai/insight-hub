@@ -299,6 +299,30 @@ export default function SchedulingPage() {
     );
   }
 
+  // ─── Edit Wizard View ──────────────────────────────────
+  if (editJob) {
+    const editInitialForm: CreateJobFormData = {
+      name: editJob.jobName,
+      userPrompt: editJob.userPrompt || "",
+      workflowId: editJob.workflowId,
+      enabled: editJob.enabled,
+      scheduleType: editJob.cronExpression ? "recurring" : "one-time",
+      cronExpression: editJob.cronExpression || "0 * * * *",
+      oneTimeDate: "",
+      timezone: editJob.timezone || "UTC",
+      executionContext: { wakeMode: editJob.wakeMode || "next-heartbeat" },
+      outputBehavior: {
+        expectedOutputFormat: editJob.outputFormat || "markdown",
+        outputSchema: editJob.outputSchema || "",
+        deliveryMethods: editJob.deliveryMethods || ["internal-log"],
+        storeStdout: true, storeStderr: true, retentionDays: 30, maxSizeKb: 10240,
+        outlookEmail: MOCK_USER.email, teamsWebhook: MOCK_USER.email,
+      },
+      failureBehavior: editJob.failureBehavior || initialForm.failureBehavior,
+    };
+    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit />;
+  }
+
   // ─── Create Wizard View ──────────────────────────────────
   if (showCreateWizard) {
     return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} />;
