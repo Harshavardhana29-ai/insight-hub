@@ -628,35 +628,83 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       <Label>Frequency</Label>
                       <div className="flex flex-wrap gap-1.5">
                         {CRON_PRESETS.map((p) => (
-                          <Button key={p.expression} variant={selectedPreset === p.expression ? "default" : "outline"} size="sm"
-                            className={cn("text-xs h-7", selectedPreset === p.expression && "gradient-blue text-primary-foreground border-0")}
-                            onClick={() => handlePresetChange(p.expression)}
+                          <Button key={p.key} variant={selectedPreset === p.key ? "default" : "outline"} size="sm"
+                            className={cn("text-xs h-7", selectedPreset === p.key && "gradient-blue text-primary-foreground border-0")}
+                            onClick={() => handlePresetChange(p.key)}
                           >{p.label}</Button>
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Time</Label>
-                      <div className="flex items-center gap-2">
-                        <Select value={cronHour} onValueChange={(v) => handleTimeChange(v, cronMinute)}>
-                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+
+                    {/* Conditional time selection */}
+                    {selectedPreset === "everymonth" && (
+                      <div className="space-y-2">
+                        <Label>Day of Month</Label>
+                        <Select value={cronDayOfMonth} onValueChange={(v) => handleTimeChange(cronHour, cronMinute, undefined, v)}>
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
-                              <SelectItem key={h} value={h}>{h}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-lg font-bold text-muted-foreground">:</span>
-                        <Select value={cronMinute} onValueChange={(v) => handleTimeChange(cronHour, v)}>
-                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            {Array.from({ length: 30 }, (_, i) => String(i + 1)).map((d) => (
+                              <SelectItem key={d} value={d}>{d}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
+                    )}
+
+                    {selectedPreset === "everyweek" && (
+                      <div className="space-y-2">
+                        <Label>Day of Week</Label>
+                        <Select value={cronDayOfWeek} onValueChange={(v) => handleTimeChange(cronHour, cronMinute, v, undefined)}>
+                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {DAY_NAMES.map((d) => (
+                              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {selectedPreset !== "everyminute" && (
+                      <div className="space-y-2">
+                        <Label>Time</Label>
+                        <div className="flex items-center gap-2">
+                          {/* Hour - shown for everyday, everyweek, everymonth */}
+                          {selectedPreset !== "everyhour" && (
+                            <>
+                              <Select value={cronHour} onValueChange={(v) => handleTimeChange(v, cronMinute)}>
+                                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                                    <SelectItem key={h} value={h}>{h}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span className="text-lg font-bold text-muted-foreground">:</span>
+                            </>
+                          )}
+                          {/* Minute - shown for everyhour, everyday, everyweek, everymonth */}
+                          <Select value={cronMinute} onValueChange={(v) => handleTimeChange(cronHour, v)}>
+                            <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedPreset === "everyhour" && (
+                            <span className="text-xs text-muted-foreground">minutes past the hour</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedPreset === "everyminute" && (
+                      <div className="rounded-md border border-border bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Time selection is not available for "Every Minute" frequency.</p>
+                      </div>
+                    )}
+
                     {cronValidation.valid && nextExecs.length > 0 && (
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Next 5 executions</Label>
