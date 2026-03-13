@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, GitBranch, MoreHorizontal, Edit, Trash2, Eye, Bot, Database,
@@ -23,13 +23,14 @@ interface WorkflowItem {
   createdAt: string;
 }
 
-const mockAgents = [
-  "News Aggregator",
-  "Sentiment Analyzer",
-  "Trend Detector",
-  "Report Generator",
-  "Data Extractor",
-];
+// Agents mapped by topic
+const topicAgents: Record<string, string[]> = {
+  AI: ["News Aggregator", "Sentiment Analyzer", "Trend Detector"],
+  Technology: ["News Aggregator", "Data Extractor", "Report Generator"],
+  Finance: ["Trend Detector", "Report Generator", "Data Extractor"],
+  Sports: ["Data Extractor", "Sentiment Analyzer"],
+  General: ["News Aggregator", "Report Generator"],
+};
 
 const mockDataSources = [
   { id: "1", name: "Gartner AI Hype Cycle 2024", topic: "AI" },
@@ -82,9 +83,33 @@ export default function WorkflowPage() {
   const [workflows] = useState(mockWorkflows);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "individual">("topic");
-  const [selectedSourceTopic, setSelectedSourceTopic] = useState("AI");
+  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
+  const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>(["AI"]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
+
+  // Derive available agents from selected topics + individual sources
+  const availableAgents = useMemo(() => {
+    const relevantTopics = new Set<string>();
+
+    // Add topics from topic selection
+    if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
+      selectedSourceTopics.forEach((t) => relevantTopics.add(t));
+    }
+
+    // Add topics from individual sources
+    if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
+      selectedIndividualSources.forEach((id) => {
+        const ds = mockDataSources.find((s) => s.id === id);
+        if (ds) relevantTopics.add(ds.topic);
+      });
+    }
+
+    const agents = new Set<string>();
+    relevantTopics.forEach((t) => {
+      (topicAgents[t] || []).forEach((a) => agents.add(a));
+    });
+    return Array.from(agents);
+  }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources]);
 
   const toggleAgent = (agent: string) => {
     setSelectedAgents((prev) =>
@@ -98,10 +123,16 @@ export default function WorkflowPage() {
     );
   };
 
+  const toggleSourceTopic = (topic: string) => {
+    setSelectedSourceTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
   const resetForm = () => {
     setSelectedAgents([]);
     setSourceSelectionMode("topic");
-    setSelectedSourceTopic("AI");
+    setSelectedSourceTopics(["AI"]);
     setSelectedIndividualSources([]);
   };
 
@@ -267,40 +298,50 @@ export default function WorkflowPage() {
             <div>
               <label className="text-sm font-medium text-foreground">Data Sources</label>
               <div className="flex gap-2 mt-1.5 mb-3">
-                <button
-                  onClick={() => setSourceSelectionMode("topic")}
-                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    sourceSelectionMode === "topic"
-                      ? "gradient-blue text-primary-foreground shadow-sm"
-                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  By Topic
-                </button>
-                <button
-                  onClick={() => setSourceSelectionMode("individual")}
-                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    sourceSelectionMode === "individual"
-                      ? "gradient-blue text-primary-foreground shadow-sm"
-                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Individual Sources
-                </button>
+                {([
+                  { key: "topic" as const, label: "By Topic" },
+                  { key: "both" as const, label: "Topic + Sources" },
+                  { key: "individual" as const, label: "Individual Sources" },
+                ]).map((mode) => (
+                  <button
+                    key={mode.key}
+                    onClick={() => setSourceSelectionMode(mode.key)}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      sourceSelectionMode === mode.key
+                        ? "gradient-blue text-primary-foreground shadow-sm"
+                        : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
               </div>
 
-              {sourceSelectionMode === "topic" ? (
-                <select
-                  value={selectedSourceTopic}
-                  onChange={(e) => setSelectedSourceTopic(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {topics.map((t) => (
-                    <option key={t} value={t}>{t} — all sources</option>
-                  ))}
-                </select>
-              ) : (
-                <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-xl p-2">
+              {/* Topic selection - shown for "topic" and "both" modes */}
+              {(sourceSelectionMode === "topic" || sourceSelectionMode === "both") && (
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground mb-1.5">Select topics</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {topics.map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => toggleSourceTopic(t)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border ${
+                          selectedSourceTopics.includes(t)
+                            ? "gradient-blue text-primary-foreground border-transparent shadow-sm"
+                            : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Individual source selection - shown for "individual" and "both" modes */}
+              {(sourceSelectionMode === "individual" || sourceSelectionMode === "both") && (
+                <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-md p-2">
                   {mockDataSources.map((ds) => (
                     <label
                       key={ds.id}
@@ -322,15 +363,20 @@ export default function WorkflowPage() {
               )}
             </div>
 
+            {/* Agents - filtered by selected topics/sources */}
             <div>
               <label className="text-sm font-medium text-foreground">Agents</label>
-              <p className="text-xs text-muted-foreground mt-0.5 mb-2">Select one or more agents for this workflow</p>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                {availableAgents.length > 0
+                  ? "Available agents based on your selection"
+                  : "Select topics or data sources to see available agents"}
+              </p>
               <div className="flex flex-wrap gap-2">
-                {mockAgents.map((agent) => (
+                {availableAgents.map((agent) => (
                   <button
                     key={agent}
                     onClick={() => toggleAgent(agent)}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all border ${
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all border ${
                       selectedAgents.includes(agent)
                         ? "gradient-purple text-primary-foreground border-transparent shadow-sm"
                         : "bg-card text-foreground border-border hover:border-bosch-purple/40 hover:bg-bosch-purple/5"
@@ -340,6 +386,9 @@ export default function WorkflowPage() {
                     {agent}
                   </button>
                 ))}
+                {availableAgents.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">No agents available — select a topic or data source first.</p>
+                )}
               </div>
             </div>
           </div>
@@ -347,11 +396,11 @@ export default function WorkflowPage() {
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
             <button
               onClick={() => setShowCreateModal(false)}
-              className="px-4 py-2.5 text-sm rounded-xl hover:bg-accent transition-colors text-muted-foreground font-medium"
+              className="px-4 py-2.5 text-sm rounded-md hover:bg-accent transition-colors text-muted-foreground font-medium"
             >
               Cancel
             </button>
-            <button className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
+            <button className="px-5 py-2.5 text-sm rounded-md gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
               Create Workflow
             </button>
           </div>

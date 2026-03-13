@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { cronToHuman, validateCronExpression, getNextExecutions, CRON_PRESETS, TIMEZONES } from "@/lib/cron";
+import { cronToHuman, validateCronExpression, getNextExecutions, CRON_PRESETS, TIMEZONES, DAY_NAMES, buildCron } from "@/lib/cron";
 import { format } from "date-fns";
 import type {
   CreateJobFormData, ScheduledJob, HistoryEntry, JobStatus,
@@ -494,31 +494,24 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   const nextExecs = form.scheduleType === "recurring" ? getNextExecutions(form.cronExpression, 5) : [];
 
   // Build cron from preset + time
-  const [selectedPreset, setSelectedPreset] = useState("0 * * * *");
+  const [selectedPreset, setSelectedPreset] = useState("everyday");
   const [cronHour, setCronHour] = useState("09");
   const [cronMinute, setCronMinute] = useState("00");
+  const [cronDayOfWeek, setCronDayOfWeek] = useState("1");
+  const [cronDayOfMonth, setCronDayOfMonth] = useState("1");
 
-  const buildCronFromTime = (preset: string, hour: string, minute: string) => {
-    // Replace minute and hour fields in the preset
-    const parts = preset.split(/\s+/);
-    if (parts.length === 5) {
-      parts[0] = String(parseInt(minute));
-      parts[1] = String(parseInt(hour));
-      return parts.join(" ");
-    }
-    return preset;
-  };
-
-  const handlePresetChange = (presetExpr: string) => {
-    setSelectedPreset(presetExpr);
-    const newCron = buildCronFromTime(presetExpr, cronHour, cronMinute);
+  const handlePresetChange = (presetKey: string) => {
+    setSelectedPreset(presetKey);
+    const newCron = buildCron(presetKey, cronMinute, cronHour, cronDayOfWeek, cronDayOfMonth);
     update("cronExpression", newCron);
   };
 
-  const handleTimeChange = (hour: string, minute: string) => {
+  const handleTimeChange = (hour: string, minute: string, dow?: string, dom?: string) => {
     setCronHour(hour);
     setCronMinute(minute);
-    const newCron = buildCronFromTime(selectedPreset, hour, minute);
+    if (dow !== undefined) setCronDayOfWeek(dow);
+    if (dom !== undefined) setCronDayOfMonth(dom);
+    const newCron = buildCron(selectedPreset, minute, hour, dow ?? cronDayOfWeek, dom ?? cronDayOfMonth);
     update("cronExpression", newCron);
   };
 
@@ -531,6 +524,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   };
 
   const toggleDelivery = (method: OutputDelivery) => {
+    if (method === "internal-log") return; // Dashboard is always enabled
     const methods = form.outputBehavior.deliveryMethods.includes(method)
       ? form.outputBehavior.deliveryMethods.filter(m => m !== method)
       : [...form.outputBehavior.deliveryMethods, method];
@@ -634,35 +628,83 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       <Label>Frequency</Label>
                       <div className="flex flex-wrap gap-1.5">
                         {CRON_PRESETS.map((p) => (
-                          <Button key={p.expression} variant={selectedPreset === p.expression ? "default" : "outline"} size="sm"
-                            className={cn("text-xs h-7", selectedPreset === p.expression && "gradient-blue text-primary-foreground border-0")}
-                            onClick={() => handlePresetChange(p.expression)}
+                          <Button key={p.key} variant={selectedPreset === p.key ? "default" : "outline"} size="sm"
+                            className={cn("text-xs h-7", selectedPreset === p.key && "gradient-blue text-primary-foreground border-0")}
+                            onClick={() => handlePresetChange(p.key)}
                           >{p.label}</Button>
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Time</Label>
-                      <div className="flex items-center gap-2">
-                        <Select value={cronHour} onValueChange={(v) => handleTimeChange(v, cronMinute)}>
-                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+
+                    {/* Conditional time selection */}
+                    {selectedPreset === "everymonth" && (
+                      <div className="space-y-2">
+                        <Label>Day of Month</Label>
+                        <Select value={cronDayOfMonth} onValueChange={(v) => handleTimeChange(cronHour, cronMinute, undefined, v)}>
+                          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
-                              <SelectItem key={h} value={h}>{h}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-lg font-bold text-muted-foreground">:</span>
-                        <Select value={cronMinute} onValueChange={(v) => handleTimeChange(cronHour, v)}>
-                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            {Array.from({ length: 30 }, (_, i) => String(i + 1)).map((d) => (
+                              <SelectItem key={d} value={d}>{d}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
+                    )}
+
+                    {selectedPreset === "everyweek" && (
+                      <div className="space-y-2">
+                        <Label>Day of Week</Label>
+                        <Select value={cronDayOfWeek} onValueChange={(v) => handleTimeChange(cronHour, cronMinute, v, undefined)}>
+                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {DAY_NAMES.map((d) => (
+                              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {selectedPreset !== "everyminute" && (
+                      <div className="space-y-2">
+                        <Label>Time</Label>
+                        <div className="flex items-center gap-2">
+                          {/* Hour - shown for everyday, everyweek, everymonth */}
+                          {selectedPreset !== "everyhour" && (
+                            <>
+                              <Select value={cronHour} onValueChange={(v) => handleTimeChange(v, cronMinute)}>
+                                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                                    <SelectItem key={h} value={h}>{h}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span className="text-lg font-bold text-muted-foreground">:</span>
+                            </>
+                          )}
+                          {/* Minute - shown for everyhour, everyday, everyweek, everymonth */}
+                          <Select value={cronMinute} onValueChange={(v) => handleTimeChange(cronHour, v)}>
+                            <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedPreset === "everyhour" && (
+                            <span className="text-xs text-muted-foreground">minutes past the hour</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedPreset === "everyminute" && (
+                      <div className="rounded-md border border-border bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Time selection is not available for "Every Minute" frequency.</p>
+                      </div>
+                    )}
+
                     {cronValidation.valid && nextExecs.length > 0 && (
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Next 5 executions</Label>
@@ -728,6 +770,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                     <SelectContent>
                       <SelectItem value="markdown">Markdown</SelectItem>
                       <SelectItem value="plain-text">Plain Text</SelectItem>
+                      <SelectItem value="json">JSON</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -750,14 +793,18 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                   <Label>Delivery Methods</Label>
                   <div className="flex flex-wrap gap-2">
                     {([
-                      { key: "internal-log" as OutputDelivery, label: "Dashboard" },
-                      { key: "outlook" as OutputDelivery, label: "Outlook" },
-                      { key: "teams" as OutputDelivery, label: "Teams" },
+                      { key: "internal-log" as OutputDelivery, label: "Dashboard", locked: true },
+                      { key: "outlook" as OutputDelivery, label: "Outlook", locked: false },
+                      { key: "teams" as OutputDelivery, label: "Teams", locked: false },
                     ]).map((m) => (
                       <Button key={m.key}
                         variant={form.outputBehavior.deliveryMethods.includes(m.key) ? "default" : "outline"} size="sm"
                         onClick={() => toggleDelivery(m.key)}
-                        className={form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : ""}
+                        disabled={m.locked}
+                        className={cn(
+                          form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : "",
+                          m.locked && "opacity-80 cursor-not-allowed"
+                        )}
                       >{m.label}</Button>
                     ))}
                   </div>
