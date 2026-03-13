@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Globe, Filter, MoreHorizontal, Eye, Trash2, Clock,
-  Database, TrendingUp, Layers, Tag,
+  Search, Plus, Globe, Filter, Trash2, Clock,
+  Database, Tag,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
