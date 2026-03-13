@@ -524,6 +524,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   };
 
   const toggleDelivery = (method: OutputDelivery) => {
+    if (method === "internal-log") return; // Dashboard is always enabled
     const methods = form.outputBehavior.deliveryMethods.includes(method)
       ? form.outputBehavior.deliveryMethods.filter(m => m !== method)
       : [...form.outputBehavior.deliveryMethods, method];
