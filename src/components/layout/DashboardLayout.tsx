@@ -119,15 +119,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors">
+              <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-primary-foreground/10 transition-colors">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="gradient-blue text-primary-foreground text-xs font-bold">KP</AvatarFallback>
+                  <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-bold">KP</AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden lg:block">
-                  <p className="text-sm font-semibold text-foreground leading-tight">Krishna Prakash</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight">Bosch Research</p>
+                  <p className="text-sm font-semibold text-primary-foreground leading-tight">Krishna Prakash</p>
+                  <p className="text-[11px] text-primary-foreground/60 leading-tight">Bosch Research</p>
                 </div>
-                <ChevronDown className="w-3 h-3 text-muted-foreground hidden lg:block" />
+                <ChevronDown className="w-3 h-3 text-primary-foreground/60 hidden lg:block" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
