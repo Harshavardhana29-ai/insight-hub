@@ -56,7 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Center: Tab Navigation */}
-        <nav className="flex items-center gap-1 bg-muted rounded-xl p-1">
+        <nav className="flex items-center gap-1 bg-primary-foreground/10 rounded-xl p-1">
           {tabs.map((tab) => {
             const active = location.pathname === tab.path;
             return (
@@ -68,14 +68,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "text-primary"
+                      : "text-primary-foreground/60 hover:text-primary-foreground"
                   }`}
                 >
                   {active && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 gradient-blue rounded-lg shadow-colored"
+                      className="absolute inset-0 bg-primary-foreground rounded-lg"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
