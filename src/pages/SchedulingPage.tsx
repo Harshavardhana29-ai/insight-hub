@@ -544,12 +544,12 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
       <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-md gradient-blue flex items-center justify-center shadow-colored">
-            <Timer className="w-5 h-5 text-primary-foreground" />
+          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-bosch-turquoise" : "gradient-blue")}>
+            {isEdit ? <Edit className="w-5 h-5 text-primary-foreground" /> : <Timer className="w-5 h-5 text-primary-foreground" />}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Create Schedule</h2>
-            <p className="text-sm text-muted-foreground">Define a new scheduled job step by step</p>
+            <h2 className="text-xl font-bold text-foreground">{isEdit ? "Edit Schedule" : "Create Schedule"}</h2>
+            <p className="text-sm text-muted-foreground">{isEdit ? "Modify your scheduled job configuration" : "Define a new scheduled job step by step"}</p>
           </div>
         </div>
 
