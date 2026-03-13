@@ -793,14 +793,18 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                   <Label>Delivery Methods</Label>
                   <div className="flex flex-wrap gap-2">
                     {([
-                      { key: "internal-log" as OutputDelivery, label: "Dashboard" },
-                      { key: "outlook" as OutputDelivery, label: "Outlook" },
-                      { key: "teams" as OutputDelivery, label: "Teams" },
+                      { key: "internal-log" as OutputDelivery, label: "Dashboard", locked: true },
+                      { key: "outlook" as OutputDelivery, label: "Outlook", locked: false },
+                      { key: "teams" as OutputDelivery, label: "Teams", locked: false },
                     ]).map((m) => (
                       <Button key={m.key}
                         variant={form.outputBehavior.deliveryMethods.includes(m.key) ? "default" : "outline"} size="sm"
                         onClick={() => toggleDelivery(m.key)}
-                        className={form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : ""}
+                        disabled={m.locked}
+                        className={cn(
+                          form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : "",
+                          m.locked && "opacity-80 cursor-not-allowed"
+                        )}
                       >{m.label}</Button>
                     ))}
                   </div>
