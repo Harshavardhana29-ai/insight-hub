@@ -760,17 +760,17 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
           </CardContent>
         </Card>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => step > 0 ? setStep(step - 1) : onCancel()}>
+        {/* Fixed Navigation */}
+        <div className="flex justify-between py-4 border-t border-border bg-background">
+          <Button variant="outline" onClick={() => step > 0 ? setStep(step - 1) : onCancel()} className="rounded-md">
             <ChevronLeft className="w-4 h-4 mr-1" /> {step > 0 ? "Back" : "Cancel"}
           </Button>
           {step < 5 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gradient-blue text-primary-foreground border-0 shadow-colored hover:opacity-90">
+            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gradient-blue text-primary-foreground border-0 shadow-colored hover:opacity-90 rounded-md">
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90">
+            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
               <Check className="w-4 h-4 mr-1" /> Save Job
             </Button>
           )}

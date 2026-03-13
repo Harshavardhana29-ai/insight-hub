@@ -183,7 +183,7 @@ export default function WorkflowPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-all group"
+              className="bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all group"
             >
               {/* Colored top accent bar */}
               <div className={`h-1 ${topicGradient[workflow.topic] || "gradient-blue"}`} />
