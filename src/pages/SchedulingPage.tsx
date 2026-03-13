@@ -392,13 +392,12 @@ export default function SchedulingPage() {
           </div>
         </div>
 
-        {/* Table — removed Notify column */}
         <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-primary bg-primary">
-                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Actions"].map((h) => (
+                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Jobs Done", "Status", "Actions"].map((h) => (
                     <th key={h} className={`text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
                     </th>
@@ -424,6 +423,9 @@ export default function SchedulingPage() {
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.nextRun}</td>
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.lastRun}</td>
                     <td className="px-5 py-4">
+                      <span className="text-sm font-semibold text-foreground">{job.jobsDone}</span>
+                    </td>
+                    <td className="px-5 py-4">
                       <Badge className={cn("text-xs font-semibold", statusConfig[job.status]?.className)}>
                         {statusConfig[job.status]?.label || job.status}
                       </Badge>
@@ -439,12 +441,15 @@ export default function SchedulingPage() {
                         <button onClick={() => setHistoryJobId(job.id)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="History">
                           <History className="w-4 h-4" />
                         </button>
+                        <button onClick={() => setDeleteConfirm(job.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
+                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
                 )}
               </tbody>
             </table>
@@ -452,8 +457,22 @@ export default function SchedulingPage() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      <EditScheduleModal job={editJob} onClose={() => setEditJob(null)} onSave={handleEditSave} />
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm rounded-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Delete Schedule
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this schedule? This action cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="rounded-md">Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && deleteJob(deleteConfirm)} className="rounded-md">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
