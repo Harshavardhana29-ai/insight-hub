@@ -96,12 +96,22 @@ export default function KnowledgeBasePage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all group"
+              className={`bg-card border border-border rounded-md p-5 hover:shadow-md transition-all border-l-4 ${
+                stat.gradient === "gradient-blue" ? "border-l-primary" :
+                stat.gradient === "gradient-green" ? "border-l-bosch-green" :
+                stat.gradient === "gradient-purple" ? "border-l-bosch-purple" :
+                "border-l-bosch-turquoise"
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
-                <div className={`w-9 h-9 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                  <stat.icon className="w-4 h-4 text-primary-foreground" />
+                <div className={`w-9 h-9 rounded-md ${
+                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" :
+                  stat.gradient === "gradient-green" ? "bg-bosch-green/10 text-bosch-green" :
+                  stat.gradient === "gradient-purple" ? "bg-bosch-purple/10 text-bosch-purple" :
+                  "bg-bosch-turquoise/10 text-bosch-turquoise"
+                } flex items-center justify-center`}>
+                  <stat.icon className="w-4 h-4" />
                 </div>
               </div>
               <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
