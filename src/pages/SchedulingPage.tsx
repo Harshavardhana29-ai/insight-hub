@@ -494,31 +494,24 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   const nextExecs = form.scheduleType === "recurring" ? getNextExecutions(form.cronExpression, 5) : [];
 
   // Build cron from preset + time
-  const [selectedPreset, setSelectedPreset] = useState("0 * * * *");
+  const [selectedPreset, setSelectedPreset] = useState("everyday");
   const [cronHour, setCronHour] = useState("09");
   const [cronMinute, setCronMinute] = useState("00");
+  const [cronDayOfWeek, setCronDayOfWeek] = useState("1");
+  const [cronDayOfMonth, setCronDayOfMonth] = useState("1");
 
-  const buildCronFromTime = (preset: string, hour: string, minute: string) => {
-    // Replace minute and hour fields in the preset
-    const parts = preset.split(/\s+/);
-    if (parts.length === 5) {
-      parts[0] = String(parseInt(minute));
-      parts[1] = String(parseInt(hour));
-      return parts.join(" ");
-    }
-    return preset;
-  };
-
-  const handlePresetChange = (presetExpr: string) => {
-    setSelectedPreset(presetExpr);
-    const newCron = buildCronFromTime(presetExpr, cronHour, cronMinute);
+  const handlePresetChange = (presetKey: string) => {
+    setSelectedPreset(presetKey);
+    const newCron = buildCron(presetKey, cronMinute, cronHour, cronDayOfWeek, cronDayOfMonth);
     update("cronExpression", newCron);
   };
 
-  const handleTimeChange = (hour: string, minute: string) => {
+  const handleTimeChange = (hour: string, minute: string, dow?: string, dom?: string) => {
     setCronHour(hour);
     setCronMinute(minute);
-    const newCron = buildCronFromTime(selectedPreset, hour, minute);
+    if (dow !== undefined) setCronDayOfWeek(dow);
+    if (dom !== undefined) setCronDayOfMonth(dom);
+    const newCron = buildCron(selectedPreset, minute, hour, dow ?? cronDayOfWeek, dom ?? cronDayOfMonth);
     update("cronExpression", newCron);
   };
 
