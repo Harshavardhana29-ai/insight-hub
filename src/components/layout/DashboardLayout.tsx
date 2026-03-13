@@ -5,13 +5,11 @@ import {
   Database,
   GitBranch,
   Calendar,
-  Bell,
   Moon,
   Sun,
   ChevronDown,
   User,
   LogOut,
-  Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
