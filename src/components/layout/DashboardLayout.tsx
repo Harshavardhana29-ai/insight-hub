@@ -89,13 +89,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Right: Actions & User */}
         <div className="flex items-center gap-2 shrink-0">
-          <button className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground">
+          <button className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors text-primary-foreground/70 hover:text-primary-foreground">
             <Search className="w-4 h-4" />
           </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground relative">
+              <button className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors text-primary-foreground/70 hover:text-primary-foreground relative">
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-bosch-red animate-pulse" />
               </button>
