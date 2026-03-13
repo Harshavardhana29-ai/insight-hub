@@ -111,6 +111,7 @@ export default function SchedulingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editJob, setEditJob] = useState<ScheduledJob | null>(null);
   const [previewEntry, setPreviewEntry] = useState<HistoryEntry | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
