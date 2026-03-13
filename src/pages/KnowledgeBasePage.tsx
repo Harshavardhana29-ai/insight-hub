@@ -1,28 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Plus,
-  Globe,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Trash2,
-  Clock,
+  Search, Plus, Globe, Filter, MoreHorizontal, Eye, Trash2, Clock,
+  Database, TrendingUp, Layers, Tag,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface KnowledgeSource {
@@ -41,6 +29,13 @@ const mockSources: KnowledgeSource[] = [
   { id: "4", name: "ESPN Sports Analytics", type: "URL", topic: "Sports", uploadDate: "2024-03-10", status: "Processing" },
   { id: "5", name: "McKinsey Industry Insights", type: "URL", topic: "General", uploadDate: "2024-03-08", status: "Active" },
   { id: "6", name: "OpenAI Research Papers", type: "URL", topic: "AI", uploadDate: "2024-03-05", status: "Error" },
+];
+
+const stats = [
+  { label: "Total Sources", value: "24", change: "+3 this week", icon: Database, gradient: "gradient-blue" },
+  { label: "Active", value: "19", change: "79% uptime", icon: TrendingUp, gradient: "gradient-green" },
+  { label: "Processing", value: "3", change: "~2 min avg", icon: Layers, gradient: "gradient-purple" },
+  { label: "Topics", value: "5", change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
 ];
 
 export default function KnowledgeBasePage() {
@@ -86,35 +81,41 @@ export default function KnowledgeBasePage() {
           </div>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
           >
             <Plus className="w-4 h-4" />
             Add Data Source
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats with gradient icons */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Total Sources", value: "24", change: "+3 this week" },
-            { label: "Active", value: "19", change: "79% uptime" },
-            { label: "Processing", value: "3", change: "~2 min avg" },
-            { label: "Topics", value: "5", change: "Covered" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
-              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
-              <p className="text-3xl font-bold mt-2 text-foreground">{stat.value}</p>
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
+                <div className={`w-9 h-9 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                  <stat.icon className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </div>
+              <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted/40">
                   <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Source Name</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Type</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Topic</th>
@@ -130,12 +131,12 @@ export default function KnowledgeBasePage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.04 }}
-                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                    className="border-b border-border last:border-0 hover:bg-accent/40 transition-colors"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Globe className="w-4 h-4 text-muted-foreground" />
+                        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                          <Globe className="w-4 h-4 text-accent-foreground" />
                         </div>
                         <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
                       </div>
@@ -176,16 +177,16 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Activity Log */}
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
           <h3 className="text-sm font-bold mb-4 text-foreground uppercase tracking-wide">Recent Activity</h3>
           <div className="space-y-3">
             {[
-              { action: "Added", source: "Gartner AI Hype Cycle 2024", time: "2 hours ago" },
-              { action: "Updated", source: "Bloomberg Finance Data Feed", time: "5 hours ago" },
-              { action: "Removed", source: "Outdated Report Q2", time: "1 day ago" },
+              { action: "Added", source: "Gartner AI Hype Cycle 2024", time: "2 hours ago", color: "bg-bosch-green" },
+              { action: "Updated", source: "Bloomberg Finance Data Feed", time: "5 hours ago", color: "bg-bosch-blue" },
+              { action: "Removed", source: "Outdated Report Q2", time: "1 day ago", color: "bg-bosch-red" },
             ].map((log, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm py-2 px-3 rounded-xl hover:bg-muted/30 transition-colors">
-                <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+              <div key={i} className="flex items-center gap-3 text-sm py-2.5 px-3 rounded-xl hover:bg-accent/40 transition-colors">
+                <div className={`w-2 h-2 rounded-full ${log.color} shrink-0`} />
                 <span className="text-muted-foreground">
                   <span className="font-semibold text-foreground">{log.action}</span> {log.source}
                 </span>
@@ -196,7 +197,7 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
 
-      {/* Upload Modal — URL only */}
+      {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -221,7 +222,7 @@ export default function KnowledgeBasePage() {
             >
               Cancel
             </button>
-            <button className="px-5 py-2.5 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-semibold shadow-sm">
+            <button className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
               Add Source
             </button>
           </div>

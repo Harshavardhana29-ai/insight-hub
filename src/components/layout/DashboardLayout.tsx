@@ -46,8 +46,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="h-16 border-b border-border bg-card shrink-0 flex items-center justify-between px-6 gap-4">
         {/* Left: Logo & App Name */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-bold text-sm">MRA</span>
+          <div className="w-9 h-9 rounded-lg gradient-blue flex items-center justify-center shadow-colored">
+            <span className="text-primary-foreground font-bold text-sm tracking-tight">MRA</span>
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-bold text-foreground leading-tight">Market Research Agent</h1>
@@ -66,7 +66,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="relative"
               >
                 <div
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                     active
                       ? "text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -75,7 +75,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   {active && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-primary rounded-lg shadow-sm"
+                      className="absolute inset-0 gradient-blue rounded-lg shadow-colored"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <DropdownMenuTrigger asChild>
               <button className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground relative">
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-bosch-red animate-pulse" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
@@ -121,7 +121,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors">
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">KP</AvatarFallback>
+                  <AvatarFallback className="gradient-blue text-primary-foreground text-xs font-bold">KP</AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden lg:block">
                   <p className="text-sm font-semibold text-foreground leading-tight">Krishna Prakash</p>

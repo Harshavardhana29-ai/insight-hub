@@ -4,7 +4,7 @@ import {
   Plus, Play, Pause, Edit, Calendar, Clock, ArrowLeft, Download,
   Bell, BellOff, History, GitBranch, Bot, Search, ChevronLeft,
   ChevronRight, Check, X, Tag, Cpu, Send, ShieldAlert, Eye,
-  Activity, AlertTriangle,
+  Activity, AlertTriangle, Zap, Timer,
 } from "lucide-react";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -56,10 +56,10 @@ const mockHistory: Record<string, HistoryEntry[]> = {
 };
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-[hsl(152_100%_27%)] text-white" },
-  running: { label: "Running", className: "bg-[hsl(49_100%_50%)] text-black" },
-  failed: { label: "Failed", className: "bg-destructive text-white" },
-  paused: { label: "Paused", className: "bg-muted-foreground text-white" },
+  active: { label: "Active", className: "bg-bosch-green text-primary-foreground" },
+  running: { label: "Running", className: "bg-bosch-yellow text-foreground" },
+  failed: { label: "Failed", className: "bg-destructive text-primary-foreground" },
+  paused: { label: "Paused", className: "bg-bosch-gray text-primary-foreground" },
 };
 
 const statusFilters: JobStatus[] = ["active", "running", "failed", "paused"];
@@ -165,8 +165,8 @@ export default function SchedulingPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Schedules
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <History className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl gradient-turquoise flex items-center justify-center shadow-sm">
+              <History className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">{historyJob.jobName} — History</h2>
@@ -190,7 +190,7 @@ export default function SchedulingPage() {
                         <p className="text-xs text-muted-foreground">Duration: {entry.duration}</p>
                       </div>
                     </div>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 transition-colors">
                       <Download className="w-3.5 h-3.5" /> Download
                     </button>
                   </div>
@@ -220,65 +220,46 @@ export default function SchedulingPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-colored">
+              <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Krishna's Scheduler</h2>
               <p className="text-sm text-muted-foreground">{jobs.filter((j) => j.enabled).length} active schedules</p>
             </div>
           </div>
-          <Button onClick={() => setShowCreateWizard(true)} className="gap-2">
+          <Button onClick={() => setShowCreateWizard(true)} className="gap-2 gradient-blue text-primary-foreground shadow-colored hover:opacity-90 border-0">
             <Plus className="w-4 h-4" /> Create Schedule
           </Button>
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[hsl(152_100%_27%/0.1)] flex items-center justify-center">
-                <Activity className="w-4 h-4 text-[hsl(152_100%_27%)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{counts.active}</p>
-                <p className="text-xs text-muted-foreground">Active</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[hsl(49_100%_50%/0.1)] flex items-center justify-center">
-                <Play className="w-4 h-4 text-[hsl(49_100%_50%)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{counts.running}</p>
-                <p className="text-xs text-muted-foreground">Running</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{counts.failed}</p>
-                <p className="text-xs text-muted-foreground">Failed</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
-                <Pause className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{counts.paused}</p>
-                <p className="text-xs text-muted-foreground">Paused</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Active", value: counts.active, icon: Activity, gradient: "gradient-green" },
+            { label: "Running", value: counts.running, icon: Play, gradient: "gradient-blue" },
+            { label: "Failed", value: counts.failed, icon: AlertTriangle, gradient: "bg-destructive" },
+            { label: "Paused", value: counts.paused, icon: Pause, gradient: "bg-bosch-gray" },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+            >
+              <Card className="border-none shadow-sm hover:shadow-md transition-all">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                    <stat.icon className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-extrabold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
 
         {/* Search & Filters */}
@@ -288,9 +269,18 @@ export default function SchedulingPage() {
             <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")}>All</Button>
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+              className={statusFilter === "all" ? "gradient-blue text-primary-foreground border-0" : ""}
+            >
+              All
+            </Button>
             {statusFilters.map((s) => (
-              <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
+              <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}
+                className={statusFilter === s ? "gradient-blue text-primary-foreground border-0" : ""}
+              >
                 {statusConfig[s].label}
               </Button>
             ))}
@@ -298,11 +288,11 @@ export default function SchedulingPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted/40">
                   {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Notify", "Actions"].map((h) => (
                     <th key={h} className={`text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
@@ -312,14 +302,14 @@ export default function SchedulingPage() {
               </thead>
               <tbody>
                 {filtered.map((job, i) => (
-                  <motion.tr key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                  <motion.tr key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} className="border-b border-border last:border-0 hover:bg-accent/40 transition-colors">
                     <td className="px-5 py-4">
-                      <button onClick={() => setHistoryJobId(job.id)} className="text-sm font-medium text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline">
+                      <button onClick={() => setHistoryJobId(job.id)} className="text-sm font-semibold text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline">
                         {job.jobName}
                       </button>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex px-2.5 py-1 bg-muted rounded-md text-xs font-medium text-muted-foreground">{job.type}</span>
+                      <span className="inline-flex px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">{job.type}</span>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -329,12 +319,12 @@ export default function SchedulingPage() {
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.nextRun}</td>
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.lastRun}</td>
                     <td className="px-5 py-4">
-                      <Badge className={cn("text-xs", statusConfig[job.status]?.className)}>
+                      <Badge className={cn("text-xs font-semibold", statusConfig[job.status]?.className)}>
                         {statusConfig[job.status]?.label || job.status}
                       </Badge>
                     </td>
                     <td className="px-5 py-4">
-                      <button onClick={() => toggleNotify(job.id)} className={`p-1.5 rounded-lg transition-colors ${job.notify ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-accent"}`}>
+                      <button onClick={() => toggleNotify(job.id)} className={`p-1.5 rounded-lg transition-colors ${job.notify ? "text-primary hover:bg-accent" : "text-muted-foreground hover:bg-accent"}`}>
                         {job.notify ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                       </button>
                     </td>
@@ -343,7 +333,7 @@ export default function SchedulingPage() {
                         <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-[hsl(152_100%_27%)] hover:bg-[hsl(152_100%_27%/0.1)]" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
+                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-bosch-green hover:bg-bosch-green/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
                           {job.enabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                         </button>
                         <button onClick={() => setHistoryJobId(job.id)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="History">
@@ -408,9 +398,14 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-3xl mx-auto p-6 space-y-6 animate-fade-in">
         {/* Header */}
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Create Schedule</h2>
-          <p className="text-sm text-muted-foreground">Define a new scheduled job step by step</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-colored">
+            <Timer className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Create Schedule</h2>
+            <p className="text-sm text-muted-foreground">Define a new scheduled job step by step</p>
+          </div>
         </div>
 
         {/* Step indicators */}
@@ -420,9 +415,9 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
               key={s.label}
               onClick={() => i <= step && setStep(i)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                i === step ? "bg-primary text-primary-foreground" :
-                i < step ? "bg-[hsl(152_100%_27%/0.1)] text-[hsl(152_100%_27%)]" :
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
+                i === step ? "gradient-blue text-primary-foreground shadow-colored" :
+                i < step ? "bg-bosch-green/10 text-bosch-green" :
                 "bg-muted text-muted-foreground"
               )}
             >
@@ -433,9 +428,9 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
         </div>
 
         {/* Step Content */}
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-6 space-y-5">
-            <h3 className="text-base font-semibold text-foreground">{STEPS[step].label}</h3>
+            <h3 className="text-base font-bold text-foreground">{STEPS[step].label}</h3>
 
             {/* Step 0: Identity */}
             {step === 0 && (
@@ -459,7 +454,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                   <Label>User Prompt</Label>
                   <Textarea value={form.userPrompt} onChange={(e) => update("userPrompt", e.target.value)} placeholder="Describe what you want this job to accomplish…" rows={4} />
                 </div>
-                <div className="flex items-center justify-between py-2">
+                <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-accent/50">
                   <div>
                     <span className="text-sm font-medium text-foreground">Enable schedule</span>
                     <p className="text-xs text-muted-foreground">{form.enabled ? "Job will run on schedule" : "Job is disabled"}</p>
@@ -473,14 +468,26 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
             {step === 1 && (
               <>
                 {form.scheduleType === "recurring" && cronValidation.valid && (
-                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
-                    <p className="text-sm font-medium text-primary">{cronToHuman(form.cronExpression)}</p>
+                  <div className="rounded-xl border-2 border-bosch-turquoise/30 bg-bosch-turquoise/5 p-4">
+                    <p className="text-sm font-semibold text-bosch-turquoise">{cronToHuman(form.cronExpression)}</p>
                     <p className="text-xs text-muted-foreground mt-1 font-mono">{form.cronExpression} • {form.timezone}</p>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Button variant={form.scheduleType === "recurring" ? "default" : "outline"} size="sm" onClick={() => update("scheduleType", "recurring")}>Recurring (Cron)</Button>
-                  <Button variant={form.scheduleType === "one-time" ? "default" : "outline"} size="sm" onClick={() => update("scheduleType", "one-time")}>One-Time</Button>
+                  <Button
+                    variant={form.scheduleType === "recurring" ? "default" : "outline"} size="sm"
+                    onClick={() => update("scheduleType", "recurring")}
+                    className={form.scheduleType === "recurring" ? "gradient-blue text-primary-foreground border-0" : ""}
+                  >
+                    Recurring (Cron)
+                  </Button>
+                  <Button
+                    variant={form.scheduleType === "one-time" ? "default" : "outline"} size="sm"
+                    onClick={() => update("scheduleType", "one-time")}
+                    className={form.scheduleType === "one-time" ? "gradient-blue text-primary-foreground border-0" : ""}
+                  >
+                    One-Time
+                  </Button>
                 </div>
                 {form.scheduleType === "recurring" ? (
                   <>
@@ -495,7 +502,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       <Label className="text-xs text-muted-foreground">Presets</Label>
                       <div className="flex flex-wrap gap-1.5">
                         {CRON_PRESETS.map((p) => (
-                          <Button key={p.expression} variant={form.cronExpression === p.expression ? "default" : "outline"} size="sm" className="text-xs h-7" onClick={() => update("cronExpression", p.expression)}>
+                          <Button key={p.expression} variant={form.cronExpression === p.expression ? "default" : "outline"} size="sm" className={cn("text-xs h-7", form.cronExpression === p.expression && "gradient-blue text-primary-foreground border-0")} onClick={() => update("cronExpression", p.expression)}>
                             {p.label}
                           </Button>
                         ))}
@@ -504,7 +511,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                     {cronValidation.valid && nextExecs.length > 0 && (
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Next 5 executions</Label>
-                        <div className="bg-muted rounded-md p-3 space-y-1">
+                        <div className="bg-accent/50 rounded-xl p-3 space-y-1">
                           {nextExecs.map((d, i) => (
                             <div key={i} className="text-xs font-mono text-foreground">{format(d, "EEE, MMM d yyyy HH:mm")}</div>
                           ))}
@@ -535,18 +542,18 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
               <div className="space-y-3">
                 <Label>Wake Mode</Label>
                 <RadioGroup value={form.executionContext.wakeMode} onValueChange={(v) => updateCtx({ wakeMode: v as WakeMode })}>
-                  <div className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50" onClick={() => updateCtx({ wakeMode: "next-heartbeat" })}>
+                  <div className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", form.executionContext.wakeMode === "next-heartbeat" ? "border-primary bg-accent/50" : "border-border hover:border-primary/30")} onClick={() => updateCtx({ wakeMode: "next-heartbeat" })}>
                     <RadioGroupItem value="next-heartbeat" id="wake-hb" className="mt-0.5" />
                     <div>
-                      <Label htmlFor="wake-hb" className="cursor-pointer font-medium">Next Heartbeat</Label>
-                      <p className="text-xs text-muted-foreground">Job queued and picked up on the agent's next heartbeat cycle. Lower resource impact.</p>
+                      <Label htmlFor="wake-hb" className="cursor-pointer font-semibold">Next Heartbeat</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Job queued and picked up on the agent's next heartbeat cycle. Lower resource impact.</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50" onClick={() => updateCtx({ wakeMode: "immediate" })}>
+                  <div className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", form.executionContext.wakeMode === "immediate" ? "border-primary bg-accent/50" : "border-border hover:border-primary/30")} onClick={() => updateCtx({ wakeMode: "immediate" })}>
                     <RadioGroupItem value="immediate" id="wake-imm" className="mt-0.5" />
                     <div>
-                      <Label htmlFor="wake-imm" className="cursor-pointer font-medium">Immediate Execution</Label>
-                      <p className="text-xs text-muted-foreground">Agent wakes immediately to execute. Use for time-critical tasks.</p>
+                      <Label htmlFor="wake-imm" className="cursor-pointer font-semibold">Immediate Execution</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Agent wakes immediately to execute. Use for time-critical tasks.</p>
                     </div>
                   </div>
                 </RadioGroup>
@@ -580,7 +587,11 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                       { key: "outlook" as OutputDelivery, label: "Outlook" },
                       { key: "teams" as OutputDelivery, label: "Teams" },
                     ]).map((m) => (
-                      <Button key={m.key} variant={form.outputBehavior.deliveryMethods.includes(m.key) ? "default" : "outline"} size="sm" onClick={() => toggleDelivery(m.key)}>
+                      <Button key={m.key}
+                        variant={form.outputBehavior.deliveryMethods.includes(m.key) ? "default" : "outline"} size="sm"
+                        onClick={() => toggleDelivery(m.key)}
+                        className={form.outputBehavior.deliveryMethods.includes(m.key) ? "gradient-blue text-primary-foreground border-0" : ""}
+                      >
                         {m.label}
                       </Button>
                     ))}
@@ -600,12 +611,12 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                 )}
                 {form.outputBehavior.deliveryMethods.includes("internal-log") && (
                   <div className="space-y-3 border-t pt-4">
-                    <p className="text-sm font-medium text-foreground">Log Storage</p>
-                    <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">Log Storage</p>
+                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
                       <span className="text-sm text-muted-foreground">Store stdout</span>
                       <Switch checked={form.outputBehavior.storeStdout} onCheckedChange={(v) => updateOutput({ storeStdout: v })} />
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
                       <span className="text-sm text-muted-foreground">Store stderr</span>
                       <Switch checked={form.outputBehavior.storeStderr} onCheckedChange={(v) => updateOutput({ storeStderr: v })} />
                     </div>
@@ -639,7 +650,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                   </Select>
                 </div>
                 <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
                     <span className="text-sm font-medium text-foreground">Enable Retries</span>
                     <Switch checked={form.failureBehavior.retry.enabled} onCheckedChange={(v) => updateFailure({ retry: { ...form.failureBehavior.retry, enabled: v } })} />
                   </div>
@@ -667,7 +678,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                   )}
                 </div>
                 <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-accent/50">
                     <span className="text-sm font-medium text-foreground">Escalate after all retries fail</span>
                     <Switch checked={form.failureBehavior.escalationEnabled} onCheckedChange={(v) => updateFailure({ escalationEnabled: v })} />
                   </div>
@@ -702,38 +713,45 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
             {step === 5 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-foreground">Identity</h4>
-                    <p className="text-sm text-muted-foreground">Name: <span className="text-foreground">{form.name || "—"}</span></p>
-                    <p className="text-sm text-muted-foreground">Workflow: <span className="text-foreground">{mockWorkflows.find(w => w.id === form.workflowId)?.title || "—"}</span></p>
-                    <p className="text-sm text-muted-foreground">Enabled: <span className="text-foreground">{form.enabled ? "Yes" : "No"}</span></p>
-                  </div>
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-foreground">Schedule</h4>
-                    <p className="text-sm text-foreground">{form.scheduleType === "recurring" ? cronToHuman(form.cronExpression) : `One-time: ${form.oneTimeDate}`}</p>
-                    <p className="text-xs text-muted-foreground">{form.timezone}</p>
-                  </div>
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-foreground">Execution</h4>
-                    <p className="text-sm text-muted-foreground">Wake: <span className="text-foreground">{form.executionContext.wakeMode.replace("-", " ")}</span></p>
-                  </div>
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-foreground">Output</h4>
-                    <p className="text-sm text-muted-foreground">Format: <span className="text-foreground">{form.outputBehavior.expectedOutputFormat}</span></p>
-                    <p className="text-sm text-muted-foreground">Delivery: <span className="text-foreground">{form.outputBehavior.deliveryMethods.join(", ")}</span></p>
-                  </div>
-                  <div className="space-y-2 p-4 rounded-lg bg-muted/50 md:col-span-2">
-                    <h4 className="text-sm font-semibold text-foreground">Failure</h4>
-                    <p className="text-sm text-muted-foreground">Concurrency: <span className="text-foreground">{form.failureBehavior.concurrency}</span></p>
-                    <p className="text-sm text-muted-foreground">Retries: <span className="text-foreground">{form.failureBehavior.retry.enabled ? `${form.failureBehavior.retry.maxAttempts} attempts, ${form.failureBehavior.retry.backoff}` : "Disabled"}</span></p>
+                  {[
+                    { title: "Identity", items: [
+                      { k: "Name", v: form.name || "—" },
+                      { k: "Workflow", v: mockWorkflows.find(w => w.id === form.workflowId)?.title || "—" },
+                      { k: "Enabled", v: form.enabled ? "Yes" : "No" },
+                    ]},
+                    { title: "Schedule", items: [
+                      { k: "", v: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression) : `One-time: ${form.oneTimeDate}` },
+                      { k: "Timezone", v: form.timezone },
+                    ]},
+                    { title: "Execution", items: [
+                      { k: "Wake", v: form.executionContext.wakeMode.replace("-", " ") },
+                    ]},
+                    { title: "Output", items: [
+                      { k: "Format", v: form.outputBehavior.expectedOutputFormat },
+                      { k: "Delivery", v: form.outputBehavior.deliveryMethods.join(", ") },
+                    ]},
+                  ].map((section) => (
+                    <div key={section.title} className="p-4 rounded-xl bg-accent/30 border border-border">
+                      <h4 className="text-sm font-bold text-foreground mb-2">{section.title}</h4>
+                      {section.items.map((item, idx) => (
+                        <p key={idx} className="text-sm text-muted-foreground">
+                          {item.k ? <>{item.k}: <span className="text-foreground font-medium">{item.v}</span></> : <span className="text-foreground font-medium">{item.v}</span>}
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                  <div className="p-4 rounded-xl bg-accent/30 border border-border md:col-span-2">
+                    <h4 className="text-sm font-bold text-foreground mb-2">Failure</h4>
+                    <p className="text-sm text-muted-foreground">Concurrency: <span className="text-foreground font-medium">{form.failureBehavior.concurrency}</span></p>
+                    <p className="text-sm text-muted-foreground">Retries: <span className="text-foreground font-medium">{form.failureBehavior.retry.enabled ? `${form.failureBehavior.retry.maxAttempts} attempts, ${form.failureBehavior.retry.backoff}` : "Disabled"}</span></p>
                     {form.failureBehavior.escalationEnabled && (
-                      <p className="text-sm text-muted-foreground">Escalation: <span className="text-foreground">{form.failureBehavior.escalationChannel}</span></p>
+                      <p className="text-sm text-muted-foreground">Escalation: <span className="text-foreground font-medium">{form.failureBehavior.escalationChannel}</span></p>
                     )}
                   </div>
                 </div>
                 {form.userPrompt && (
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-foreground mb-1">User Prompt</h4>
+                  <div className="p-4 rounded-xl bg-bosch-purple/5 border border-bosch-purple/20">
+                    <h4 className="text-sm font-bold text-foreground mb-1">User Prompt</h4>
                     <p className="text-sm text-muted-foreground">{form.userPrompt}</p>
                   </div>
                 )}
@@ -748,11 +766,11 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
             <ChevronLeft className="w-4 h-4 mr-1" /> {step > 0 ? "Back" : "Cancel"}
           </Button>
           {step < 5 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
+            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gradient-blue text-primary-foreground border-0 shadow-colored hover:opacity-90">
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={() => onSave(form)}>
+            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90">
               <Check className="w-4 h-4 mr-1" /> Save Job
             </Button>
           )}
