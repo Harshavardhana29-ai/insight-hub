@@ -115,7 +115,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <div className="w-px h-6 bg-border mx-1" />
+          <div className="w-px h-6 bg-primary-foreground/20 mx-1" />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
