@@ -258,43 +258,39 @@ export default function SchedulingPage() {
           )}
         </div>
 
-        {/* Preview Modal */}
+        {/* Preview Modal — Rendered Markdown Report */}
         <Dialog open={!!previewEntry} onOpenChange={() => setPreviewEntry(null)}>
-          <DialogContent className="max-w-2xl rounded-md">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                Run Preview — {previewEntry?.runDate}
+                Report Preview — {previewEntry?.runDate}
               </DialogTitle>
             </DialogHeader>
             {previewEntry && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-md bg-accent/30 border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Status</p>
-                    <StatusIndicator status={previewEntry.status} />
+              <div className="mt-2">
+                {previewEntry.reportMarkdown ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none
+                    prose-headings:text-foreground prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:border-border prose-h1:pb-2 prose-h1:mb-4
+                    prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2
+                    prose-h3:text-base prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-1
+                    prose-p:text-foreground prose-p:leading-relaxed
+                    prose-strong:text-foreground prose-strong:font-bold
+                    prose-li:text-foreground prose-li:marker:text-muted-foreground
+                    prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground prose-blockquote:italic
+                    prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+                    prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-md
+                    prose-table:border-collapse prose-th:bg-muted prose-th:border prose-th:border-border prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:font-semibold prose-th:text-muted-foreground prose-th:uppercase
+                    prose-td:border prose-td:border-border prose-td:px-3 prose-td:py-2 prose-td:text-sm
+                  ">
+                    <div dangerouslySetInnerHTML={{ __html: renderMarkdown(previewEntry.reportMarkdown) }} />
                   </div>
-                  <div className="p-3 rounded-md bg-accent/30 border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Duration</p>
-                    <p className="text-sm font-semibold text-foreground">{previewEntry.duration}</p>
+                ) : (
+                  <div className="p-8 text-center">
+                    <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No report content available for this run.</p>
                   </div>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Workflow</p>
-                  <p className="text-sm font-semibold text-foreground">{previewEntry.workflow}</p>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Agents Used</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {previewEntry.agents.map((a) => (
-                      <Badge key={a} variant="secondary" className="text-xs">{a}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Output</p>
-                  <p className="text-sm text-foreground">{previewEntry.description}</p>
-                </div>
+                )}
               </div>
             )}
           </DialogContent>
