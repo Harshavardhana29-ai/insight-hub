@@ -135,22 +135,22 @@ export default function WorkflowPage() {
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Total", value: workflows.length, icon: Workflow, gradient: "gradient-blue" },
-            { label: "Active", value: workflows.filter(w => w.status === "Active").length, icon: Zap, gradient: "gradient-green" },
-            { label: "Draft", value: workflows.filter(w => w.status === "Draft").length, icon: Edit, gradient: "gradient-purple" },
-            { label: "Agents Used", value: new Set(workflows.flatMap(w => w.agents)).size, icon: Bot, gradient: "gradient-turquoise" },
+            { label: "Total", value: workflows.length, icon: Workflow, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
+            { label: "Active", value: workflows.filter(w => w.status === "Active").length, icon: Zap, color: "border-l-bosch-green", iconBg: "bg-bosch-green/10 text-bosch-green" },
+            { label: "Draft", value: workflows.filter(w => w.status === "Draft").length, icon: Edit, color: "border-l-bosch-purple", iconBg: "bg-bosch-purple/10 text-bosch-purple" },
+            { label: "Agents Used", value: new Set(workflows.flatMap(w => w.agents)).size, icon: Bot, color: "border-l-bosch-turquoise", iconBg: "bg-bosch-turquoise/10 text-bosch-turquoise" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all"
+              className={`bg-card border border-border rounded-md p-5 hover:shadow-md transition-all border-l-4 ${stat.color}`}
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
-                <div className={`w-9 h-9 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                  <stat.icon className="w-4 h-4 text-primary-foreground" />
+                <div className={`w-9 h-9 rounded-md ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon className="w-4 h-4" />
                 </div>
               </div>
               <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
@@ -183,7 +183,7 @@ export default function WorkflowPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-all group"
+              className="bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all group"
             >
               {/* Colored top accent bar */}
               <div className={`h-1 ${topicGradient[workflow.topic] || "gradient-blue"}`} />

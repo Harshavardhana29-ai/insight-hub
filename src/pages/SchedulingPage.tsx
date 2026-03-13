@@ -174,14 +174,14 @@ export default function SchedulingPage() {
             </div>
           </div>
           {historyEntries.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-12 text-center">
+            <div className="bg-card border border-border rounded-md p-12 text-center">
               <History className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">No history available yet</p>
             </div>
           ) : (
             <div className="space-y-3">
               {historyEntries.map((entry, i) => (
-                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all">
+                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-5 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={entry.status} />
@@ -236,10 +236,10 @@ export default function SchedulingPage() {
         {/* Status Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Active", value: counts.active, icon: Activity, gradient: "gradient-green" },
-            { label: "Running", value: counts.running, icon: Play, gradient: "gradient-blue" },
-            { label: "Failed", value: counts.failed, icon: AlertTriangle, gradient: "bg-destructive" },
-            { label: "Paused", value: counts.paused, icon: Pause, gradient: "bg-bosch-gray" },
+            { label: "Active", value: counts.active, icon: Activity, color: "border-l-bosch-green", iconBg: "bg-bosch-green/10 text-bosch-green" },
+            { label: "Running", value: counts.running, icon: Play, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
+            { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
+            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -247,10 +247,10 @@ export default function SchedulingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
             >
-              <Card className="border-none shadow-sm hover:shadow-md transition-all">
+              <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm hover:shadow-md transition-all`}>
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                    <stat.icon className="w-4 h-4 text-primary-foreground" />
+                  <div className={`w-10 h-10 rounded-md ${stat.iconBg} flex items-center justify-center`}>
+                    <stat.icon className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold text-foreground">{stat.value}</p>
@@ -288,13 +288,13 @@ export default function SchedulingPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
+                <tr className="border-b border-primary bg-primary">
                   {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Notify", "Actions"].map((h) => (
-                    <th key={h} className={`text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
+                    <th key={h} className={`text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
                     </th>
                   ))}
@@ -395,11 +395,11 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-6 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-colored">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-md gradient-blue flex items-center justify-center shadow-colored">
             <Timer className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
@@ -409,13 +409,13 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
         </div>
 
         {/* Step indicators */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-3">
           {STEPS.map((s, i) => (
             <button
               key={s.label}
               onClick={() => i <= step && setStep(i)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 i === step ? "gradient-blue text-primary-foreground shadow-colored" :
                 i < step ? "bg-bosch-green/10 text-bosch-green" :
                 "bg-muted text-muted-foreground"
@@ -427,9 +427,9 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
           ))}
         </div>
 
-        {/* Step Content */}
-        <Card className="shadow-sm">
-          <CardContent className="p-6 space-y-5">
+        {/* Scrollable Step Content */}
+        <Card className="shadow-sm rounded-md flex-1 min-h-0 overflow-hidden flex flex-col">
+          <CardContent className="p-6 space-y-5 overflow-y-auto flex-1">
             <h3 className="text-base font-bold text-foreground">{STEPS[step].label}</h3>
 
             {/* Step 0: Identity */}
@@ -760,17 +760,17 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
           </CardContent>
         </Card>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => step > 0 ? setStep(step - 1) : onCancel()}>
+        {/* Fixed Navigation */}
+        <div className="flex justify-between py-4 border-t border-border bg-background">
+          <Button variant="outline" onClick={() => step > 0 ? setStep(step - 1) : onCancel()} className="rounded-md">
             <ChevronLeft className="w-4 h-4 mr-1" /> {step > 0 ? "Back" : "Cancel"}
           </Button>
           {step < 5 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gradient-blue text-primary-foreground border-0 shadow-colored hover:opacity-90">
+            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gradient-blue text-primary-foreground border-0 shadow-colored hover:opacity-90 rounded-md">
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90">
+            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
               <Check className="w-4 h-4 mr-1" /> Save Job
             </Button>
           )}

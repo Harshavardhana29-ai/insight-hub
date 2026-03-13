@@ -96,12 +96,22 @@ export default function KnowledgeBasePage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-all group"
+              className={`bg-card border border-border rounded-md p-5 hover:shadow-md transition-all border-l-4 ${
+                stat.gradient === "gradient-blue" ? "border-l-primary" :
+                stat.gradient === "gradient-green" ? "border-l-bosch-green" :
+                stat.gradient === "gradient-purple" ? "border-l-bosch-purple" :
+                "border-l-bosch-turquoise"
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
-                <div className={`w-9 h-9 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                  <stat.icon className="w-4 h-4 text-primary-foreground" />
+                <div className={`w-9 h-9 rounded-md ${
+                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" :
+                  stat.gradient === "gradient-green" ? "bg-bosch-green/10 text-bosch-green" :
+                  stat.gradient === "gradient-purple" ? "bg-bosch-purple/10 text-bosch-purple" :
+                  "bg-bosch-turquoise/10 text-bosch-turquoise"
+                } flex items-center justify-center`}>
+                  <stat.icon className="w-4 h-4" />
                 </div>
               </div>
               <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
@@ -111,17 +121,17 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Source Name</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Type</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Topic</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Uploaded</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Status</th>
-                  <th className="text-right text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide">Actions</th>
+                <tr className="border-b border-primary bg-primary">
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Source Name</th>
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Type</th>
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Topic</th>
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Uploaded</th>
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Status</th>
+                  <th className="text-right text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,7 +187,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Activity Log */}
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+        <div className="bg-card border border-border rounded-md p-5 shadow-sm">
           <h3 className="text-sm font-bold mb-4 text-foreground uppercase tracking-wide">Recent Activity</h3>
           <div className="space-y-3">
             {[
