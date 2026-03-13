@@ -27,6 +27,40 @@ import type {
   OutputDelivery, OutputFormat, WakeMode, ConcurrencyPolicy,
 } from "@/types/cron";
 
+// Simple markdown to HTML renderer
+function renderMarkdown(md: string): string {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`{3}([\s\S]*?)`{3}/g, '<pre><code>$1</code></pre>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
+    .replace(/^\| (.+) \|$/gm, (match) => {
+      const cells = match.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    })
+    .replace(/^\|[-:|\s]+\|$/gm, '')
+    .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
+      const rows = match.trim().split('\n').filter(r => r.trim());
+      if (rows.length > 0) {
+        const header = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+        const body = rows.slice(1).join('\n');
+        return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
+      }
+      return match;
+    })
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br/>')
+    .replace(/^(?!<[huptblo])/gm, '')
+    ;
+}
+
 // ─── Mock Data ───────────────────────────────────────────────
 const MOCK_USER = {
   name: "Krishna Prakash",
