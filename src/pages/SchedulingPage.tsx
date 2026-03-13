@@ -356,8 +356,8 @@ export default function SchedulingPage() {
             { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
             { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
           ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-              <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm hover:shadow-md transition-all`}>
+            <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }} whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}>
+              <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm transition-all`}>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-md ${stat.iconBg} flex items-center justify-center`}>
                     <stat.icon className="w-4 h-4" />

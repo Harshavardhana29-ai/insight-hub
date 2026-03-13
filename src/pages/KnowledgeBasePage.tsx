@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Globe, Filter, MoreHorizontal, Eye, Trash2, Clock,
-  Database, TrendingUp, Layers, Tag,
+  Search, Plus, Globe, Filter, Trash2, Clock,
+  Database, Tag,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface KnowledgeSource {
   id: string;
@@ -33,8 +30,6 @@ const mockSources: KnowledgeSource[] = [
 
 const stats = [
   { label: "Total Sources", value: "24", change: "+3 this week", icon: Database, gradient: "gradient-blue" },
-  { label: "Active", value: "19", change: "79% uptime", icon: TrendingUp, gradient: "gradient-green" },
-  { label: "Processing", value: "3", change: "~2 min avg", icon: Layers, gradient: "gradient-purple" },
   { label: "Topics", value: "5", change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
 ];
 
@@ -88,34 +83,31 @@ export default function KnowledgeBasePage() {
           </button>
         </div>
 
-        {/* Stats with gradient icons */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className={`bg-card border border-border rounded-md p-5 hover:shadow-md transition-all border-l-4 ${
-                stat.gradient === "gradient-blue" ? "border-l-primary" :
-                stat.gradient === "gradient-green" ? "border-l-bosch-green" :
-                stat.gradient === "gradient-purple" ? "border-l-bosch-purple" :
-                "border-l-bosch-turquoise"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }}
+              whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}
+              className={`bg-card border border-border rounded-md p-4 transition-all border-l-4 ${
+                stat.gradient === "gradient-blue" ? "border-l-primary" : "border-l-bosch-turquoise"
               }`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
+              <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-md ${
-                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" :
-                  stat.gradient === "gradient-green" ? "bg-bosch-green/10 text-bosch-green" :
-                  stat.gradient === "gradient-purple" ? "bg-bosch-purple/10 text-bosch-purple" :
-                  "bg-bosch-turquoise/10 text-bosch-turquoise"
-                } flex items-center justify-center`}>
+                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" : "bg-bosch-turquoise/10 text-bosch-turquoise"
+                } flex items-center justify-center shrink-0`}>
                   <stat.icon className="w-4 h-4" />
                 </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-foreground leading-tight">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground font-semibold">{stat.label}</p>
+                </div>
+                <p className="text-xs text-muted-foreground ml-auto">{stat.change}</p>
               </div>
-              <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
             </motion.div>
           ))}
         </div>
@@ -167,17 +159,12 @@ export default function KnowledgeBasePage() {
                       <StatusIndicator status={source.status} />
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> View</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <button
+                        className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </motion.tr>
                 ))}
