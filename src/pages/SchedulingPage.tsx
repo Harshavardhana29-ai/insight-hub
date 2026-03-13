@@ -4,7 +4,7 @@ import {
   Plus, Play, Pause, Edit, Calendar, Clock, ArrowLeft, Download,
   History, GitBranch, Bot, Search, ChevronLeft,
   ChevronRight, Check, X, Tag, Cpu, Send, ShieldAlert, Eye,
-  Activity, AlertTriangle, Zap, Timer, FileText,
+  Activity, AlertTriangle, Zap, Timer, FileText, Trash2,
 } from "lucide-react";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -41,11 +41,11 @@ const mockWorkflows = [
 ];
 
 const initialJobs: ScheduledJob[] = [
-  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true },
-  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: false, enabled: true },
-  { id: "3", jobName: "Monthly Finance Summary", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true },
-  { id: "4", jobName: "Sports Update Evening", type: "Daily", workflowId: "4", workflowTitle: "Sports Analytics Weekly", scheduleTime: "18:00", nextRun: "—", lastRun: "Mar 10", status: "paused", notify: false, enabled: false },
-  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: false, enabled: true },
+  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true, jobsDone: 47 },
+  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: false, enabled: true, jobsDone: 12 },
+  { id: "3", jobName: "Monthly Finance Summary", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true, jobsDone: 3 },
+  { id: "4", jobName: "Sports Update Evening", type: "Daily", workflowId: "4", workflowTitle: "Sports Analytics Weekly", scheduleTime: "18:00", nextRun: "—", lastRun: "Mar 10", status: "paused", notify: false, enabled: false, jobsDone: 28 },
+  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: false, enabled: true, jobsDone: 8 },
 ];
 
 const mockHistory: Record<string, HistoryEntry[]> = {
@@ -111,6 +111,7 @@ export default function SchedulingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editJob, setEditJob] = useState<ScheduledJob | null>(null);
   const [previewEntry, setPreviewEntry] = useState<HistoryEntry | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
@@ -151,6 +152,7 @@ export default function SchedulingPage() {
       status: form.enabled ? "active" : "paused",
       notify: false,
       enabled: form.enabled,
+      jobsDone: 0,
       userPrompt: form.userPrompt,
       cronExpression: form.cronExpression,
       timezone: form.timezone,
@@ -163,9 +165,33 @@ export default function SchedulingPage() {
     setShowCreateWizard(false);
   };
 
-  const handleEditSave = (updatedJob: ScheduledJob) => {
+  const handleEditSave = (form: CreateJobFormData) => {
+    if (!editJob) return;
+    const wf = mockWorkflows.find(w => w.id === form.workflowId);
+    const updatedJob: ScheduledJob = {
+      ...editJob,
+      jobName: form.name,
+      type: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression).split(" ")[0] : "One-time",
+      workflowId: form.workflowId,
+      workflowTitle: wf?.title || "—",
+      scheduleTime: form.scheduleType === "recurring" ? form.cronExpression : form.oneTimeDate,
+      status: form.enabled ? "active" : "paused",
+      enabled: form.enabled,
+      userPrompt: form.userPrompt,
+      cronExpression: form.cronExpression,
+      timezone: form.timezone,
+      wakeMode: form.executionContext.wakeMode,
+      outputFormat: form.outputBehavior.expectedOutputFormat,
+      deliveryMethods: form.outputBehavior.deliveryMethods,
+      failureBehavior: form.failureBehavior,
+    };
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
     setEditJob(null);
+  };
+
+  const deleteJob = (id: string) => {
+    setJobs(prev => prev.filter(j => j.id !== id));
+    setDeleteConfirm(null);
   };
 
   // ─── History View ────────────────────────────────────────
@@ -273,6 +299,30 @@ export default function SchedulingPage() {
     );
   }
 
+  // ─── Edit Wizard View ──────────────────────────────────
+  if (editJob) {
+    const editInitialForm: CreateJobFormData = {
+      name: editJob.jobName,
+      userPrompt: editJob.userPrompt || "",
+      workflowId: editJob.workflowId,
+      enabled: editJob.enabled,
+      scheduleType: editJob.cronExpression ? "recurring" : "one-time",
+      cronExpression: editJob.cronExpression || "0 * * * *",
+      oneTimeDate: "",
+      timezone: editJob.timezone || "UTC",
+      executionContext: { wakeMode: editJob.wakeMode || "next-heartbeat" },
+      outputBehavior: {
+        expectedOutputFormat: editJob.outputFormat || "markdown",
+        outputSchema: editJob.outputSchema || "",
+        deliveryMethods: editJob.deliveryMethods || ["internal-log"],
+        storeStdout: true, storeStderr: true, retentionDays: 30, maxSizeKb: 10240,
+        outlookEmail: MOCK_USER.email, teamsWebhook: MOCK_USER.email,
+      },
+      failureBehavior: editJob.failureBehavior || initialForm.failureBehavior,
+    };
+    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit />;
+  }
+
   // ─── Create Wizard View ──────────────────────────────────
   if (showCreateWizard) {
     return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} />;
@@ -342,13 +392,12 @@ export default function SchedulingPage() {
           </div>
         </div>
 
-        {/* Table — removed Notify column */}
         <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-primary bg-primary">
-                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Actions"].map((h) => (
+                  {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Jobs Done", "Status", "Actions"].map((h) => (
                     <th key={h} className={`text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
                     </th>
@@ -374,6 +423,9 @@ export default function SchedulingPage() {
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.nextRun}</td>
                     <td className="px-5 py-4 text-sm text-muted-foreground">{job.lastRun}</td>
                     <td className="px-5 py-4">
+                      <span className="text-sm font-semibold text-foreground">{job.jobsDone}</span>
+                    </td>
+                    <td className="px-5 py-4">
                       <Badge className={cn("text-xs font-semibold", statusConfig[job.status]?.className)}>
                         {statusConfig[job.status]?.label || job.status}
                       </Badge>
@@ -389,12 +441,15 @@ export default function SchedulingPage() {
                         <button onClick={() => setHistoryJobId(job.id)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="History">
                           <History className="w-4 h-4" />
                         </button>
+                        <button onClick={() => setDeleteConfirm(job.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
+                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">No jobs found</td></tr>
                 )}
               </tbody>
             </table>
@@ -402,77 +457,30 @@ export default function SchedulingPage() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      <EditScheduleModal job={editJob} onClose={() => setEditJob(null)} onSave={handleEditSave} />
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm rounded-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Delete Schedule
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this schedule? This action cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="rounded-md">Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && deleteJob(deleteConfirm)} className="rounded-md">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// ─── Edit Schedule Modal ─────────────────────────────────────
-function EditScheduleModal({ job, onClose, onSave }: { job: ScheduledJob | null; onClose: () => void; onSave: (job: ScheduledJob) => void }) {
-  const [editData, setEditData] = useState<ScheduledJob | null>(null);
-
-  useState(() => {
-    if (job) setEditData({ ...job });
-  });
-
-  // Sync when job changes
-  if (job && editData?.id !== job.id) {
-    setEditData({ ...job });
-  }
-
-  if (!job || !editData) return null;
-
-  return (
-    <Dialog open={!!job} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg rounded-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="w-5 h-5 text-primary" />
-            Edit Schedule
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Job Name</Label>
-            <Input value={editData.jobName} onChange={(e) => setEditData({ ...editData, jobName: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Workflow</Label>
-            <Select value={editData.workflowId} onValueChange={(v) => {
-              const wf = mockWorkflows.find(w => w.id === v);
-              setEditData({ ...editData, workflowId: v, workflowTitle: wf?.title || "—" });
-            }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {mockWorkflows.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Schedule Time</Label>
-            <Input value={editData.scheduleTime} onChange={(e) => setEditData({ ...editData, scheduleTime: e.target.value })} />
-          </div>
-          <div className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/50">
-            <span className="text-sm font-medium text-foreground">Enabled</span>
-            <Switch checked={editData.enabled} onCheckedChange={(v) => setEditData({ ...editData, enabled: v, status: v ? "active" : "paused" })} />
-          </div>
-        </div>
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose} className="rounded-md">Cancel</Button>
-          <Button onClick={() => onSave(editData)} className="gradient-blue text-primary-foreground border-0 rounded-md">Save Changes</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Create Schedule Wizard ──────────────────────────────────
-function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void }) {
+// ─── Create/Edit Schedule Wizard ──────────────────────────────────
+function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean }) {
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<CreateJobFormData>(initialForm);
+  const [form, setForm] = useState<CreateJobFormData>(initialData || initialForm);
 
   const update = <K extends keyof CreateJobFormData>(key: K, value: CreateJobFormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -536,12 +544,12 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
       <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-md gradient-blue flex items-center justify-center shadow-colored">
-            <Timer className="w-5 h-5 text-primary-foreground" />
+          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-bosch-turquoise" : "gradient-blue")}>
+            {isEdit ? <Edit className="w-5 h-5 text-primary-foreground" /> : <Timer className="w-5 h-5 text-primary-foreground" />}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Create Schedule</h2>
-            <p className="text-sm text-muted-foreground">Define a new scheduled job step by step</p>
+            <h2 className="text-xl font-bold text-foreground">{isEdit ? "Edit Schedule" : "Create Schedule"}</h2>
+            <p className="text-sm text-muted-foreground">{isEdit ? "Modify your scheduled job configuration" : "Define a new scheduled job step by step"}</p>
           </div>
         </div>
 
@@ -938,7 +946,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
             </Button>
           ) : (
             <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
-              <Check className="w-4 h-4 mr-1" /> Save Job
+              <Check className="w-4 h-4 mr-1" /> {isEdit ? "Update Job" : "Save Job"}
             </Button>
           )}
         </div>
