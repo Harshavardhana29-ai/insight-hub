@@ -83,9 +83,33 @@ export default function WorkflowPage() {
   const [workflows] = useState(mockWorkflows);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "individual">("topic");
-  const [selectedSourceTopic, setSelectedSourceTopic] = useState("AI");
+  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
+  const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>(["AI"]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
+
+  // Derive available agents from selected topics + individual sources
+  const availableAgents = useMemo(() => {
+    const relevantTopics = new Set<string>();
+
+    // Add topics from topic selection
+    if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
+      selectedSourceTopics.forEach((t) => relevantTopics.add(t));
+    }
+
+    // Add topics from individual sources
+    if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
+      selectedIndividualSources.forEach((id) => {
+        const ds = mockDataSources.find((s) => s.id === id);
+        if (ds) relevantTopics.add(ds.topic);
+      });
+    }
+
+    const agents = new Set<string>();
+    relevantTopics.forEach((t) => {
+      (topicAgents[t] || []).forEach((a) => agents.add(a));
+    });
+    return Array.from(agents);
+  }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources]);
 
   const toggleAgent = (agent: string) => {
     setSelectedAgents((prev) =>
@@ -99,10 +123,16 @@ export default function WorkflowPage() {
     );
   };
 
+  const toggleSourceTopic = (topic: string) => {
+    setSelectedSourceTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
   const resetForm = () => {
     setSelectedAgents([]);
     setSourceSelectionMode("topic");
-    setSelectedSourceTopic("AI");
+    setSelectedSourceTopics(["AI"]);
     setSelectedIndividualSources([]);
   };
 
