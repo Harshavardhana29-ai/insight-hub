@@ -770,6 +770,7 @@ function CreateScheduleWizard({ onSave, onCancel }: { onSave: (form: CreateJobFo
                     <SelectContent>
                       <SelectItem value="markdown">Markdown</SelectItem>
                       <SelectItem value="plain-text">Plain Text</SelectItem>
+                      <SelectItem value="json">JSON</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
