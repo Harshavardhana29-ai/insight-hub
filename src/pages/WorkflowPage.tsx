@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  Plus, GitBranch, MoreHorizontal, Edit, Trash2, Eye, Bot, Database,
-  Workflow, Zap, BarChart3,
+  Plus, GitBranch, Edit, Trash2, Bot, Database,
+  Workflow, Zap,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
