@@ -41,11 +41,11 @@ const mockWorkflows = [
 ];
 
 const initialJobs: ScheduledJob[] = [
-  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true },
-  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: false, enabled: true },
-  { id: "3", jobName: "Monthly Finance Summary", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true },
-  { id: "4", jobName: "Sports Update Evening", type: "Daily", workflowId: "4", workflowTitle: "Sports Analytics Weekly", scheduleTime: "18:00", nextRun: "—", lastRun: "Mar 10", status: "paused", notify: false, enabled: false },
-  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: false, enabled: true },
+  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true, jobsDone: 47 },
+  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 18", lastRun: "Mar 11", status: "active", notify: false, enabled: true, jobsDone: 12 },
+  { id: "3", jobName: "Monthly Finance Summary", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true, jobsDone: 3 },
+  { id: "4", jobName: "Sports Update Evening", type: "Daily", workflowId: "4", workflowTitle: "Sports Analytics Weekly", scheduleTime: "18:00", nextRun: "—", lastRun: "Mar 10", status: "paused", notify: false, enabled: false, jobsDone: 28 },
+  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 15", lastRun: "Mar 8", status: "active", notify: false, enabled: true, jobsDone: 8 },
 ];
 
 const mockHistory: Record<string, HistoryEntry[]> = {
