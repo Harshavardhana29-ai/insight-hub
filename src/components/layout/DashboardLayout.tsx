@@ -46,12 +46,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="h-16 border-b border-primary/20 bg-primary shrink-0 flex items-center justify-between px-6 gap-4">
         {/* Left: Logo & App Name */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-lg gradient-blue flex items-center justify-center shadow-colored">
+          <div className="w-9 h-9 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm tracking-tight">MRA</span>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-foreground leading-tight">Market Research Agent</h1>
-            <p className="text-[11px] text-muted-foreground leading-tight">Powered by Bosch</p>
+            <h1 className="text-sm font-bold text-primary-foreground leading-tight">Market Research Agent</h1>
+            <p className="text-[11px] text-primary-foreground/60 leading-tight">Powered by Bosch</p>
           </div>
         </div>
 
