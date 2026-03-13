@@ -83,34 +83,31 @@ export default function KnowledgeBasePage() {
           </button>
         </div>
 
-        {/* Stats with gradient icons */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className={`bg-card border border-border rounded-md p-5 hover:shadow-md transition-all border-l-4 ${
-                stat.gradient === "gradient-blue" ? "border-l-primary" :
-                stat.gradient === "gradient-green" ? "border-l-bosch-green" :
-                stat.gradient === "gradient-purple" ? "border-l-bosch-purple" :
-                "border-l-bosch-turquoise"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }}
+              whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}
+              className={`bg-card border border-border rounded-md p-4 transition-all border-l-4 ${
+                stat.gradient === "gradient-blue" ? "border-l-primary" : "border-l-bosch-turquoise"
               }`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{stat.label}</p>
+              <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-md ${
-                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" :
-                  stat.gradient === "gradient-green" ? "bg-bosch-green/10 text-bosch-green" :
-                  stat.gradient === "gradient-purple" ? "bg-bosch-purple/10 text-bosch-purple" :
-                  "bg-bosch-turquoise/10 text-bosch-turquoise"
-                } flex items-center justify-center`}>
+                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" : "bg-bosch-turquoise/10 text-bosch-turquoise"
+                } flex items-center justify-center shrink-0`}>
                   <stat.icon className="w-4 h-4" />
                 </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-foreground leading-tight">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground font-semibold">{stat.label}</p>
+                </div>
+                <p className="text-xs text-muted-foreground ml-auto">{stat.change}</p>
               </div>
-              <p className="text-3xl font-extrabold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
             </motion.div>
           ))}
         </div>
