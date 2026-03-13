@@ -236,10 +236,10 @@ export default function SchedulingPage() {
         {/* Status Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Active", value: counts.active, icon: Activity, gradient: "gradient-green" },
-            { label: "Running", value: counts.running, icon: Play, gradient: "gradient-blue" },
-            { label: "Failed", value: counts.failed, icon: AlertTriangle, gradient: "bg-destructive" },
-            { label: "Paused", value: counts.paused, icon: Pause, gradient: "bg-bosch-gray" },
+            { label: "Active", value: counts.active, icon: Activity, color: "border-l-bosch-green", iconBg: "bg-bosch-green/10 text-bosch-green" },
+            { label: "Running", value: counts.running, icon: Play, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
+            { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
+            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -247,10 +247,10 @@ export default function SchedulingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
             >
-              <Card className="border-none shadow-sm hover:shadow-md transition-all">
+              <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm hover:shadow-md transition-all`}>
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                    <stat.icon className="w-4 h-4 text-primary-foreground" />
+                  <div className={`w-10 h-10 rounded-md ${stat.iconBg} flex items-center justify-center`}>
+                    <stat.icon className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold text-foreground">{stat.value}</p>
