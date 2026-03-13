@@ -23,13 +23,14 @@ interface WorkflowItem {
   createdAt: string;
 }
 
-const mockAgents = [
-  "News Aggregator",
-  "Sentiment Analyzer",
-  "Trend Detector",
-  "Report Generator",
-  "Data Extractor",
-];
+// Agents mapped by topic
+const topicAgents: Record<string, string[]> = {
+  AI: ["News Aggregator", "Sentiment Analyzer", "Trend Detector"],
+  Technology: ["News Aggregator", "Data Extractor", "Report Generator"],
+  Finance: ["Trend Detector", "Report Generator", "Data Extractor"],
+  Sports: ["Data Extractor", "Sentiment Analyzer"],
+  General: ["News Aggregator", "Report Generator"],
+};
 
 const mockDataSources = [
   { id: "1", name: "Gartner AI Hype Cycle 2024", topic: "AI" },
