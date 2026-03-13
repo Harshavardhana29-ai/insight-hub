@@ -76,31 +76,32 @@ const topicGradient: Record<string, string> = {
 };
 
 export default function WorkflowPage() {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [workflows] = useState(mockWorkflows);
+  const [showModal, setShowModal] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<WorkflowItem | null>(null);
+  const [workflows, setWorkflows] = useState(mockWorkflows);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+
+  // Form state
+  const [formTitle, setFormTitle] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
   const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>(["AI"]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
 
+  const isEdit = !!editingWorkflow;
+
   // Derive available agents from selected topics + individual sources
   const availableAgents = useMemo(() => {
     const relevantTopics = new Set<string>();
-
-    // Add topics from topic selection
     if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
       selectedSourceTopics.forEach((t) => relevantTopics.add(t));
     }
-
-    // Add topics from individual sources
     if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
       selectedIndividualSources.forEach((id) => {
         const ds = mockDataSources.find((s) => s.id === id);
         if (ds) relevantTopics.add(ds.topic);
       });
     }
-
     const agents = new Set<string>();
     relevantTopics.forEach((t) => {
       (topicAgents[t] || []).forEach((a) => agents.add(a));
@@ -127,10 +128,64 @@ export default function WorkflowPage() {
   };
 
   const resetForm = () => {
+    setFormTitle("");
     setSelectedAgents([]);
     setSourceSelectionMode("topic");
     setSelectedSourceTopics(["AI"]);
     setSelectedIndividualSources([]);
+    setEditingWorkflow(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEdit = (workflow: WorkflowItem) => {
+    setEditingWorkflow(workflow);
+    setFormTitle(workflow.title);
+    setSelectedAgents([...workflow.agents]);
+
+    // Determine source selection mode from workflow data
+    const workflowSourceIds = workflow.dataSources
+      .map((name) => mockDataSources.find((ds) => ds.name === name)?.id)
+      .filter(Boolean) as string[];
+    const workflowSourceTopics = [...new Set(
+      workflow.dataSources
+        .map((name) => mockDataSources.find((ds) => ds.name === name)?.topic)
+        .filter(Boolean) as string[]
+    )];
+
+    setSelectedSourceTopics(workflowSourceTopics.length > 0 ? workflowSourceTopics : [workflow.topic]);
+    setSelectedIndividualSources(workflowSourceIds);
+    setSourceSelectionMode("both");
+    setShowModal(true);
+  };
+
+  const handleSave = () => {
+    if (isEdit && editingWorkflow) {
+      // Gather selected data source names
+      const sourceNames = new Set<string>();
+      if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
+        mockDataSources.filter(ds => selectedSourceTopics.includes(ds.topic)).forEach(ds => sourceNames.add(ds.name));
+      }
+      if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
+        selectedIndividualSources.forEach(id => {
+          const ds = mockDataSources.find(s => s.id === id);
+          if (ds) sourceNames.add(ds.name);
+        });
+      }
+
+      setWorkflows(prev => prev.map(w => w.id === editingWorkflow.id ? {
+        ...w,
+        title: formTitle || w.title,
+        dataSources: Array.from(sourceNames),
+        agents: selectedAgents,
+        topic: selectedSourceTopics[0] || w.topic,
+      } : w));
+    }
+    setShowModal(false);
+    resetForm();
   };
 
   const filteredWorkflows = workflows.filter((w) => selectedTopic === "all" || w.topic === selectedTopic);
@@ -152,7 +207,7 @@ export default function WorkflowPage() {
             </div>
           </div>
           <button
-            onClick={() => { resetForm(); setShowCreateModal(true); }}
+            onClick={openCreate}
             className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
           >
             <Plus className="w-4 h-4" />
@@ -214,7 +269,6 @@ export default function WorkflowPage() {
               transition={{ delay: i * 0.05 }}
               className="bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all group"
             >
-              {/* Colored top accent bar */}
               <div className={`h-1 ${topicGradient[workflow.topic] || "gradient-blue"}`} />
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
@@ -230,7 +284,11 @@ export default function WorkflowPage() {
                   <div className="flex items-center gap-2">
                     <StatusIndicator status={workflow.status} />
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
+                      <button
+                        onClick={() => openEdit(workflow)}
+                        className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
+                        title="Edit"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
@@ -273,17 +331,22 @@ export default function WorkflowPage() {
         </div>
       </div>
 
-      {/* Create Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+      {/* Create / Edit Modal */}
+      <Dialog open={showModal} onOpenChange={(open) => { if (!open) { setShowModal(false); resetForm(); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Workflow</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {isEdit && <Edit className="w-5 h-5 text-bosch-turquoise" />}
+              {isEdit ? "Edit Workflow" : "Create Workflow"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 mt-2">
             <div>
               <label className="text-sm font-medium text-foreground">Workflow Title</label>
               <input
                 type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
                 placeholder="e.g. AI News Digest"
                 className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -302,7 +365,7 @@ export default function WorkflowPage() {
                     onClick={() => setSourceSelectionMode(mode.key)}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                       sourceSelectionMode === mode.key
-                        ? "gradient-blue text-primary-foreground shadow-sm"
+                        ? (isEdit ? "gradient-turquoise" : "gradient-blue") + " text-primary-foreground shadow-sm"
                         : "bg-card border border-border text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -311,7 +374,6 @@ export default function WorkflowPage() {
                 ))}
               </div>
 
-              {/* Topic selection - shown for "topic" and "both" modes */}
               {(sourceSelectionMode === "topic" || sourceSelectionMode === "both") && (
                 <div className="mb-3">
                   <p className="text-xs text-muted-foreground mb-1.5">Select topics</p>
@@ -322,7 +384,7 @@ export default function WorkflowPage() {
                         onClick={() => toggleSourceTopic(t)}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border ${
                           selectedSourceTopics.includes(t)
-                            ? "gradient-blue text-primary-foreground border-transparent shadow-sm"
+                            ? (isEdit ? "gradient-turquoise" : "gradient-blue") + " text-primary-foreground border-transparent shadow-sm"
                             : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/30"
                         }`}
                       >
@@ -333,7 +395,6 @@ export default function WorkflowPage() {
                 </div>
               )}
 
-              {/* Individual source selection - shown for "individual" and "both" modes */}
               {(sourceSelectionMode === "individual" || sourceSelectionMode === "both") && (
                 <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-md p-2">
                   {mockDataSources.map((ds) => (
@@ -357,7 +418,7 @@ export default function WorkflowPage() {
               )}
             </div>
 
-            {/* Agents - filtered by selected topics/sources */}
+            {/* Agents */}
             <div>
               <label className="text-sm font-medium text-foreground">Agents</label>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">
@@ -389,13 +450,16 @@ export default function WorkflowPage() {
 
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
             <button
-              onClick={() => setShowCreateModal(false)}
+              onClick={() => { setShowModal(false); resetForm(); }}
               className="px-4 py-2.5 text-sm rounded-md hover:bg-accent transition-colors text-muted-foreground font-medium"
             >
               Cancel
             </button>
-            <button className="px-5 py-2.5 text-sm rounded-md gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
-              Create Workflow
+            <button
+              onClick={handleSave}
+              className={`px-5 py-2.5 text-sm rounded-md ${isEdit ? "gradient-turquoise" : "gradient-blue"} text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored`}
+            >
+              {isEdit ? "Update Workflow" : "Create Workflow"}
             </button>
           </div>
         </DialogContent>

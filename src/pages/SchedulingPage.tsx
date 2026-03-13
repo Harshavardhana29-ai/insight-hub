@@ -27,6 +27,40 @@ import type {
   OutputDelivery, OutputFormat, WakeMode, ConcurrencyPolicy,
 } from "@/types/cron";
 
+// Simple markdown to HTML renderer
+function renderMarkdown(md: string): string {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`{3}([\s\S]*?)`{3}/g, '<pre><code>$1</code></pre>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
+    .replace(/^\| (.+) \|$/gm, (match) => {
+      const cells = match.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    })
+    .replace(/^\|[-:|\s]+\|$/gm, '')
+    .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
+      const rows = match.trim().split('\n').filter(r => r.trim());
+      if (rows.length > 0) {
+        const header = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+        const body = rows.slice(1).join('\n');
+        return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
+      }
+      return match;
+    })
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br/>')
+    .replace(/^(?!<[huptblo])/gm, '')
+    ;
+}
+
 // ─── Mock Data ───────────────────────────────────────────────
 const MOCK_USER = {
   name: "Krishna Prakash",
@@ -50,12 +84,16 @@ const initialJobs: ScheduledJob[] = [
 
 const mockHistory: Record<string, HistoryEntry[]> = {
   "1": [
-    { id: "h1", runDate: "2024-03-12 09:00", status: "Completed", duration: "2m 34s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 47 articles, generated sentiment report" },
-    { id: "h2", runDate: "2024-03-11 09:00", status: "Completed", duration: "2m 12s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 52 articles, generated sentiment report" },
-    { id: "h3", runDate: "2024-03-10 09:00", status: "Error", duration: "0m 45s", workflow: "AI News Digest", agents: ["News Aggregator"], description: "API rate limit exceeded, partial data collected" },
+    { id: "h1", runDate: "2024-03-12 09:00", status: "Completed", duration: "2m 34s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 47 articles, generated sentiment report",
+      reportMarkdown: `# AI News Digest — March 12, 2024\n\n## Executive Summary\n\nToday's AI landscape shows **significant momentum** in enterprise adoption, with 47 articles analyzed across major publications.\n\n## Key Findings\n\n### 1. Enterprise AI Adoption Accelerates\nGartner reports that **65% of enterprises** have deployed at least one AI solution in production, up from 48% last year.\n\n- Cloud-based AI services grew **32% YoY**\n- On-premise deployments remain strong in regulated industries\n- Average ROI reported at **3.2x** within 18 months\n\n### 2. Generative AI in Production\nOpenAI's latest research papers highlight:\n- Improved reasoning capabilities in large language models\n- New benchmarks for code generation accuracy (**94.2% pass rate**)\n- Reduced hallucination rates by **40%** compared to previous models\n\n### 3. Regulatory Landscape\n| Region | Status | Key Focus |\n|--------|--------|-----------|\n| EU | Active | AI Act enforcement begins |\n| US | Proposed | Executive order on safe AI |\n| Asia | Mixed | Country-specific frameworks |\n\n## Sentiment Analysis\n\n- **Positive**: 68% of articles\n- **Neutral**: 22% of articles\n- **Negative**: 10% of articles\n\n> *"AI is no longer a competitive advantage — it's a competitive necessity."* — Gartner Report\n\n## Recommendations\n\n1. Monitor EU AI Act compliance requirements\n2. Evaluate generative AI for internal workflows\n3. Invest in AI literacy programs for teams` },
+    { id: "h2", runDate: "2024-03-11 09:00", status: "Completed", duration: "2m 12s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 52 articles, generated sentiment report",
+      reportMarkdown: `# AI News Digest — March 11, 2024\n\n## Summary\n\n52 articles analyzed. Key themes: **open-source AI models**, **AI safety research**, and **healthcare AI breakthroughs**.\n\n## Highlights\n\n### Open-Source AI Models\n- Meta released new open-weight models with **improved multilingual support**\n- Community adoption of open models grew **45%** in Q1 2024\n\n### Healthcare AI\n- FDA approved **3 new AI-powered diagnostic tools**\n- Radiology AI achieving **97.8% accuracy** in early cancer detection\n\n## Sentiment: Predominantly positive (71%)` },
+    { id: "h3", runDate: "2024-03-10 09:00", status: "Error", duration: "0m 45s", workflow: "AI News Digest", agents: ["News Aggregator"], description: "API rate limit exceeded, partial data collected",
+      reportMarkdown: `# ⚠️ Error Report — March 10, 2024\n\n## Failure Details\n\n**Error Type:** API Rate Limit Exceeded\n\n\`\`\`\nHTTP 429 Too Many Requests\nRetry-After: 3600\nEndpoint: api.newsaggregator.com/v2/articles\n\`\`\`\n\n## Partial Data Collected\n\nOnly **12 of expected 50+** articles were retrieved before the rate limit was hit.\n\n## Resolution\n\n- Automatic retry scheduled for next execution window\n- Consider upgrading API tier for higher rate limits` },
   ],
   "2": [
-    { id: "h4", runDate: "2024-03-11 08:00", status: "Completed", duration: "5m 10s", workflow: "Market Trend Analysis", agents: ["Trend Detector", "Report Generator"], description: "Analyzed 12 market sectors, generated weekly trend report" },
+    { id: "h4", runDate: "2024-03-11 08:00", status: "Completed", duration: "5m 10s", workflow: "Market Trend Analysis", agents: ["Trend Detector", "Report Generator"], description: "Analyzed 12 market sectors, generated weekly trend report",
+      reportMarkdown: `# Market Trend Analysis — Week of March 11, 2024\n\n## Market Overview\n\nAnalyzed **12 market sectors** with data from Bloomberg Finance API.\n\n## Sector Performance\n\n| Sector | Weekly Change | Trend | Signal |\n|--------|:---:|:---:|:---:|\n| Technology | +2.4% | 📈 Bullish | Strong Buy |\n| Healthcare | +1.1% | 📈 Bullish | Hold |\n| Energy | -0.8% | 📉 Bearish | Watch |\n| Finance | +0.6% | ➡️ Neutral | Hold |\n| Consumer | +1.8% | 📈 Bullish | Buy |\n\n## Key Insights\n\n### Tech Sector Rally\nDriven by **strong earnings** from major cloud providers and continued AI investment.\n\n### Energy Decline\n- Oil prices dropped **3.2%** due to increased supply forecasts\n- Renewable energy stocks showed **resilience** (+0.4%)\n\n## Risk Factors\n\n1. **Interest rate uncertainty** — Fed meeting next week\n2. **Geopolitical tensions** — Potential supply chain disruptions\n3. **Earnings season** — Mixed signals from retail sector\n\n> *Next report scheduled: March 18, 2024*` },
   ],
 };
 
@@ -254,43 +292,39 @@ export default function SchedulingPage() {
           )}
         </div>
 
-        {/* Preview Modal */}
+        {/* Preview Modal — Rendered Markdown Report */}
         <Dialog open={!!previewEntry} onOpenChange={() => setPreviewEntry(null)}>
-          <DialogContent className="max-w-2xl rounded-md">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                Run Preview — {previewEntry?.runDate}
+                Report Preview — {previewEntry?.runDate}
               </DialogTitle>
             </DialogHeader>
             {previewEntry && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-md bg-accent/30 border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Status</p>
-                    <StatusIndicator status={previewEntry.status} />
+              <div className="mt-2">
+                {previewEntry.reportMarkdown ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none
+                    prose-headings:text-foreground prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:border-border prose-h1:pb-2 prose-h1:mb-4
+                    prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2
+                    prose-h3:text-base prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-1
+                    prose-p:text-foreground prose-p:leading-relaxed
+                    prose-strong:text-foreground prose-strong:font-bold
+                    prose-li:text-foreground prose-li:marker:text-muted-foreground
+                    prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground prose-blockquote:italic
+                    prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+                    prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-md
+                    prose-table:border-collapse prose-th:bg-muted prose-th:border prose-th:border-border prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:font-semibold prose-th:text-muted-foreground prose-th:uppercase
+                    prose-td:border prose-td:border-border prose-td:px-3 prose-td:py-2 prose-td:text-sm
+                  ">
+                    <div dangerouslySetInnerHTML={{ __html: renderMarkdown(previewEntry.reportMarkdown) }} />
                   </div>
-                  <div className="p-3 rounded-md bg-accent/30 border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Duration</p>
-                    <p className="text-sm font-semibold text-foreground">{previewEntry.duration}</p>
+                ) : (
+                  <div className="p-8 text-center">
+                    <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No report content available for this run.</p>
                   </div>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Workflow</p>
-                  <p className="text-sm font-semibold text-foreground">{previewEntry.workflow}</p>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Agents Used</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {previewEntry.agents.map((a) => (
-                      <Badge key={a} variant="secondary" className="text-xs">{a}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3 rounded-md bg-accent/30 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Output</p>
-                  <p className="text-sm text-foreground">{previewEntry.description}</p>
-                </div>
+                )}
               </div>
             )}
           </DialogContent>

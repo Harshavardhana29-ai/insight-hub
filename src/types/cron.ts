@@ -76,4 +76,5 @@ export interface HistoryEntry {
   workflow: string;
   agents: string[];
   description: string;
+  reportMarkdown?: string;
 }
