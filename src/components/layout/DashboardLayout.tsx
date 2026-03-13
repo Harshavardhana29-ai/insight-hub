@@ -43,7 +43,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-background">
       {/* Header */}
-      <header className="h-16 border-b border-border bg-card shrink-0 flex items-center justify-between px-6 gap-4">
+      <header className="h-16 border-b border-primary/20 bg-primary shrink-0 flex items-center justify-between px-6 gap-4">
         {/* Left: Logo & App Name */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-lg gradient-blue flex items-center justify-center shadow-colored">
