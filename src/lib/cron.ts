@@ -1,16 +1,15 @@
 export interface CronPreset {
   label: string;
   expression: string;
+  key: string;
 }
 
 export const CRON_PRESETS: CronPreset[] = [
-  { label: 'Every minute', expression: '* * * * *' },
-  { label: 'Every hour', expression: '0 * * * *' },
-  { label: 'Every day at midnight', expression: '0 0 * * *' },
-  { label: 'Every day at 9 AM', expression: '0 9 * * *' },
-  { label: 'Every Monday', expression: '0 9 * * 1' },
-  { label: 'Every weekday', expression: '0 9 * * 1-5' },
-  { label: 'Every month (1st)', expression: '0 0 1 * *' },
+  { label: 'Every Minute', expression: '* * * * *', key: 'everyminute' },
+  { label: 'Every Hour', expression: '0 * * * *', key: 'everyhour' },
+  { label: 'Every Day', expression: '0 0 * * *', key: 'everyday' },
+  { label: 'Every Week', expression: '0 0 * * 1', key: 'everyweek' },
+  { label: 'Every Month', expression: '0 0 1 * *', key: 'everymonth' },
 ];
 
 export const TIMEZONES = [
@@ -26,6 +25,16 @@ export const TIMEZONES = [
   'Asia/Tokyo',
   'Asia/Shanghai',
   'Australia/Sydney',
+];
+
+export const DAY_NAMES = [
+  { label: 'Monday', value: '1' },
+  { label: 'Tuesday', value: '2' },
+  { label: 'Wednesday', value: '3' },
+  { label: 'Thursday', value: '4' },
+  { label: 'Friday', value: '5' },
+  { label: 'Saturday', value: '6' },
+  { label: 'Sunday', value: '0' },
 ];
 
 export function validateCronExpression(expr: string): { valid: boolean; errors: string[] } {
@@ -52,9 +61,6 @@ export function validateCronExpression(expr: string): { valid: boolean; errors: 
 }
 
 export function cronToHuman(expr: string): string {
-  const preset = CRON_PRESETS.find(p => p.expression === expr);
-  if (preset) return preset.label;
-
   const parts = expr.trim().split(/\s+/);
   if (parts.length !== 5) return expr;
 
@@ -103,4 +109,21 @@ export function getNextExecutions(expr: string, count: number): Date[] {
   }
 
   return results;
+}
+
+export function buildCron(preset: string, minute: string, hour: string, dayOfWeek: string, dayOfMonth: string): string {
+  switch (preset) {
+    case 'everyminute':
+      return '* * * * *';
+    case 'everyhour':
+      return `${parseInt(minute)} * * * *`;
+    case 'everyday':
+      return `${parseInt(minute)} ${parseInt(hour)} * * *`;
+    case 'everyweek':
+      return `${parseInt(minute)} ${parseInt(hour)} * * ${dayOfWeek}`;
+    case 'everymonth':
+      return `${parseInt(minute)} ${parseInt(hour)} ${parseInt(dayOfMonth)} * *`;
+    default:
+      return '0 0 * * *';
+  }
 }

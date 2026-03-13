@@ -1,6 +1,6 @@
 export type ScheduleType = 'recurring' | 'one-time';
 export type WakeMode = 'next-heartbeat' | 'immediate';
-export type OutputFormat = 'markdown' | 'plain-text' | 'pdf';
+export type OutputFormat = 'markdown' | 'plain-text' | 'json' | 'pdf';
 export type OutputDelivery = 'internal-log' | 'outlook' | 'teams';
 export type ConcurrencyPolicy = 'allow' | 'skip' | 'queue';
 export type BackoffStrategy = 'fixed' | 'exponential';
