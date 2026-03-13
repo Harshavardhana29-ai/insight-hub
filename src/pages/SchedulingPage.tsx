@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { cronToHuman, validateCronExpression, getNextExecutions, CRON_PRESETS, TIMEZONES } from "@/lib/cron";
+import { cronToHuman, validateCronExpression, getNextExecutions, CRON_PRESETS, TIMEZONES, DAY_NAMES, buildCron } from "@/lib/cron";
 import { format } from "date-fns";
 import type {
   CreateJobFormData, ScheduledJob, HistoryEntry, JobStatus,
