@@ -152,6 +152,7 @@ export default function SchedulingPage() {
       status: form.enabled ? "active" : "paused",
       notify: false,
       enabled: form.enabled,
+      jobsDone: 0,
       userPrompt: form.userPrompt,
       cronExpression: form.cronExpression,
       timezone: form.timezone,
@@ -164,9 +165,33 @@ export default function SchedulingPage() {
     setShowCreateWizard(false);
   };
 
-  const handleEditSave = (updatedJob: ScheduledJob) => {
+  const handleEditSave = (form: CreateJobFormData) => {
+    if (!editJob) return;
+    const wf = mockWorkflows.find(w => w.id === form.workflowId);
+    const updatedJob: ScheduledJob = {
+      ...editJob,
+      jobName: form.name,
+      type: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression).split(" ")[0] : "One-time",
+      workflowId: form.workflowId,
+      workflowTitle: wf?.title || "—",
+      scheduleTime: form.scheduleType === "recurring" ? form.cronExpression : form.oneTimeDate,
+      status: form.enabled ? "active" : "paused",
+      enabled: form.enabled,
+      userPrompt: form.userPrompt,
+      cronExpression: form.cronExpression,
+      timezone: form.timezone,
+      wakeMode: form.executionContext.wakeMode,
+      outputFormat: form.outputBehavior.expectedOutputFormat,
+      deliveryMethods: form.outputBehavior.deliveryMethods,
+      failureBehavior: form.failureBehavior,
+    };
     setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
     setEditJob(null);
+  };
+
+  const deleteJob = (id: string) => {
+    setJobs(prev => prev.filter(j => j.id !== id));
+    setDeleteConfirm(null);
   };
 
   // ─── History View ────────────────────────────────────────
