@@ -288,13 +288,13 @@ export default function SchedulingPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
+                <tr className="border-b border-primary bg-primary">
                   {["Job Name", "Type", "Schedule Time", "Next Run", "Last Run", "Status", "Notify", "Actions"].map((h) => (
-                    <th key={h} className={`text-xs font-semibold text-muted-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
+                    <th key={h} className={`text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide ${h === "Actions" ? "text-right" : "text-left"}`}>
                       {h}
                     </th>
                   ))}
