@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Play, GitBranch, Download, Eye, FileText, Loader2,
-  CheckCircle2, AlertTriangle, Clock, Bot, Database, X,
+  CheckCircle2, AlertTriangle, Clock, Bot, Database, X, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
