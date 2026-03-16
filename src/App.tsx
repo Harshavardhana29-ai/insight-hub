@@ -7,6 +7,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowPage from "@/pages/WorkflowPage";
 import SchedulingPage from "@/pages/SchedulingPage";
+import RunWorkflowPage from "@/pages/RunWorkflowPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Navigate to="/knowledge" replace />} />
             <Route path="/knowledge" element={<KnowledgeBasePage />} />
             <Route path="/workflows" element={<WorkflowPage />} />
+            <Route path="/run" element={<RunWorkflowPage />} />
             <Route path="/scheduling" element={<SchedulingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

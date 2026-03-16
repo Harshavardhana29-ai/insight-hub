@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, GitBranch, Edit, Trash2, Bot, Database,
-  Workflow, Zap,
+  Workflow, Zap, Search, X, ChevronDown,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -75,6 +75,91 @@ const topicGradient: Record<string, string> = {
   General: "gradient-blue",
 };
 
+// Searchable dropdown component
+function SearchableDropdown({
+  options,
+  selected,
+  onToggle,
+  placeholder,
+  renderOption,
+  multiple = true,
+}: {
+  options: { id: string; label: string; extra?: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  placeholder: string;
+  renderOption?: (opt: { id: string; label: string; extra?: string }) => React.ReactNode;
+  multiple?: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = options.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase()) ||
+    (o.extra && o.extra.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      <div
+        className="flex items-center gap-2 px-3 py-2.5 text-sm rounded-xl bg-muted border border-border cursor-pointer"
+        onClick={() => setOpen(!open)}
+      >
+        <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground text-foreground"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
+      {open && (
+        <div className="absolute z-30 mt-1 w-full bg-card border border-border rounded-xl shadow-lg max-h-52 overflow-y-auto">
+          {filtered.length === 0 && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">No results found</p>
+          )}
+          {filtered.map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => { onToggle(opt.id); if (!multiple) setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2 first:rounded-t-xl last:rounded-b-xl ${
+                selected.includes(opt.id) ? "bg-accent/60" : ""
+              }`}
+            >
+              {multiple && (
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                  selected.includes(opt.id) ? "bg-primary border-primary" : "border-border"
+                }`}>
+                  {selected.includes(opt.id) && <span className="text-primary-foreground text-[10px] font-bold">✓</span>}
+                </div>
+              )}
+              {renderOption ? renderOption(opt) : (
+                <span className="flex-1">{opt.label}</span>
+              )}
+              {!multiple && selected.includes(opt.id) && (
+                <span className="text-primary text-xs font-bold">✓</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function WorkflowPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowItem | null>(null);
@@ -87,6 +172,7 @@ export default function WorkflowPage() {
   const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
   const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>(["AI"]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
+  const [individualTopicFilter, setIndividualTopicFilter] = useState<string>("all");
 
   const isEdit = !!editingWorkflow;
 
@@ -109,6 +195,16 @@ export default function WorkflowPage() {
     return Array.from(agents);
   }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources]);
 
+  // Filter individual sources by topic filter
+  const filteredIndividualSources = useMemo(() => {
+    if (sourceSelectionMode === "both") {
+      // In "both" mode, filter by selected topics
+      return mockDataSources.filter(ds => selectedSourceTopics.includes(ds.topic));
+    }
+    if (individualTopicFilter === "all") return mockDataSources;
+    return mockDataSources.filter(ds => ds.topic === individualTopicFilter);
+  }, [sourceSelectionMode, selectedSourceTopics, individualTopicFilter]);
+
   const toggleAgent = (agent: string) => {
     setSelectedAgents((prev) =>
       prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]
@@ -121,9 +217,9 @@ export default function WorkflowPage() {
     );
   };
 
-  const toggleSourceTopic = (topic: string) => {
+  const toggleSourceTopic = (topicId: string) => {
     setSelectedSourceTopics((prev) =>
-      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+      prev.includes(topicId) ? prev.filter((t) => t !== topicId) : [...prev, topicId]
     );
   };
 
@@ -134,6 +230,7 @@ export default function WorkflowPage() {
     setSelectedSourceTopics(["AI"]);
     setSelectedIndividualSources([]);
     setEditingWorkflow(null);
+    setIndividualTopicFilter("all");
   };
 
   const openCreate = () => {
@@ -146,7 +243,6 @@ export default function WorkflowPage() {
     setFormTitle(workflow.title);
     setSelectedAgents([...workflow.agents]);
 
-    // Determine source selection mode from workflow data
     const workflowSourceIds = workflow.dataSources
       .map((name) => mockDataSources.find((ds) => ds.name === name)?.id)
       .filter(Boolean) as string[];
@@ -164,7 +260,6 @@ export default function WorkflowPage() {
 
   const handleSave = () => {
     if (isEdit && editingWorkflow) {
-      // Gather selected data source names
       const sourceNames = new Set<string>();
       if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
         mockDataSources.filter(ds => selectedSourceTopics.includes(ds.topic)).forEach(ds => sourceNames.add(ds.name));
@@ -377,43 +472,73 @@ export default function WorkflowPage() {
               {(sourceSelectionMode === "topic" || sourceSelectionMode === "both") && (
                 <div className="mb-3">
                   <p className="text-xs text-muted-foreground mb-1.5">Select topics</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {topics.map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => toggleSourceTopic(t)}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border ${
-                          selectedSourceTopics.includes(t)
-                            ? (isEdit ? "gradient-turquoise" : "gradient-blue") + " text-primary-foreground border-transparent shadow-sm"
-                            : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/30"
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                  <SearchableDropdown
+                    options={topics.map(t => ({ id: t, label: t }))}
+                    selected={selectedSourceTopics}
+                    onToggle={toggleSourceTopic}
+                    placeholder="Search topics…"
+                    multiple={true}
+                  />
+                  {selectedSourceTopics.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {selectedSourceTopics.map(t => (
+                        <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
+                          {t}
+                          <button onClick={() => toggleSourceTopic(t)} className="hover:text-destructive transition-colors">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {(sourceSelectionMode === "individual" || sourceSelectionMode === "both") && (
-                <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-md p-2">
-                  {mockDataSources.map((ds) => (
-                    <label
-                      key={ds.id}
-                      className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedIndividualSources.includes(ds.id) ? "bg-accent" : "hover:bg-muted"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedIndividualSources.includes(ds.id)}
-                        onChange={() => toggleSource(ds.id)}
-                        className="rounded border-border accent-[hsl(202,100%,38%)]"
+                <div>
+                  {sourceSelectionMode === "individual" && (
+                    <div className="mb-2">
+                      <p className="text-xs text-muted-foreground mb-1.5">Filter by topic</p>
+                      <SearchableDropdown
+                        options={[{ id: "all", label: "All Topics" }, ...topics.map(t => ({ id: t, label: t }))]}
+                        selected={[individualTopicFilter]}
+                        onToggle={(id) => setIndividualTopicFilter(id)}
+                        placeholder="Filter by topic…"
+                        multiple={false}
                       />
-                      <span className="text-sm text-foreground flex-1">{ds.name}</span>
-                      <TopicBadge topic={ds.topic} />
-                    </label>
-                  ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mb-1.5 mt-2">
+                    {sourceSelectionMode === "both" ? "Select individual sources (filtered by selected topics)" : "Select individual sources"}
+                  </p>
+                  <SearchableDropdown
+                    options={filteredIndividualSources.map(ds => ({ id: ds.id, label: ds.name, extra: ds.topic }))}
+                    selected={selectedIndividualSources}
+                    onToggle={toggleSource}
+                    placeholder="Search data sources…"
+                    renderOption={(opt) => (
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm text-foreground flex-1">{opt.label}</span>
+                        <TopicBadge topic={opt.extra || ""} />
+                      </div>
+                    )}
+                  />
+                  {selectedIndividualSources.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {selectedIndividualSources.map(id => {
+                        const ds = mockDataSources.find(s => s.id === id);
+                        return ds ? (
+                          <span key={id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
+                            <Database className="w-3 h-3" />
+                            {ds.name}
+                            <button onClick={() => toggleSource(id)} className="hover:text-destructive transition-colors">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
