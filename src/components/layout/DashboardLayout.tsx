@@ -24,6 +24,7 @@ import {
 const tabs = [
   { title: "Knowledge Base", path: "/knowledge", icon: Database },
   { title: "Workflows", path: "/workflows", icon: GitBranch },
+  { title: "Run Workflow", path: "/run", icon: Play },
   { title: "Scheduler", path: "/scheduling", icon: Calendar },
 ];
 
