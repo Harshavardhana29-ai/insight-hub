@@ -5,6 +5,7 @@ import {
   Database,
   GitBranch,
   Calendar,
+  Play,
   Moon,
   Sun,
   ChevronDown,
