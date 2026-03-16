@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Play, GitBranch, Download, Eye, FileText, Loader2,
-  CheckCircle2, AlertTriangle, Clock, Bot, Database, X,
+  CheckCircle2, AlertTriangle, Clock, Bot, Database, X, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -119,6 +120,7 @@ function renderMarkdown(md: string): string {
 
 export default function RunWorkflowPage() {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [userPrompt, setUserPrompt] = useState("");
   const [status, setStatus] = useState<RunStatus>("idle");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [progress, setProgress] = useState(0);
@@ -256,6 +258,22 @@ export default function RunWorkflowPage() {
                 </div>
               </motion.div>
             )}
+
+            {/* User Prompt */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                User Prompt
+              </label>
+              <Textarea
+                value={userPrompt}
+                onChange={(e) => setUserPrompt(e.target.value)}
+                placeholder="Describe what you want this workflow to focus on… e.g. 'Focus on European market trends in the last 7 days'"
+                className="rounded-xl min-h-[80px] resize-none"
+                disabled={status === "running"}
+              />
+              <p className="text-[11px] text-muted-foreground">Provide additional context or instructions for this workflow run.</p>
+            </div>
 
             <div className="flex items-center gap-3">
               <Button
