@@ -120,6 +120,7 @@ function renderMarkdown(md: string): string {
 
 export default function RunWorkflowPage() {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [userPrompt, setUserPrompt] = useState("");
   const [status, setStatus] = useState<RunStatus>("idle");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [progress, setProgress] = useState(0);
