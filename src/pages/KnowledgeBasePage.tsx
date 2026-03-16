@@ -2,51 +2,49 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search, Plus, Globe, Filter, Trash2, Clock,
-  Database, Tag, X,
+  Database, Tag, X, Loader2,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-
-interface KnowledgeSource {
-  id: string;
-  name: string;
-  type: "URL";
-  topic: string;
-  tags: string[];
-  uploadDate: string;
-  status: string;
-}
-
-const PREDEFINED_TOPICS = ["AI", "Sports", "Finance", "Technology", "General", "Healthcare", "Energy", "Automotive"];
-const PREDEFINED_TAGS = ["Research", "News", "Analytics", "API", "Report", "Academic", "Real-time", "Historical", "Trends", "Market Data", "Open Source", "Enterprise"];
-
-const mockSources: KnowledgeSource[] = [
-  { id: "1", name: "Gartner AI Hype Cycle 2024", type: "URL", topic: "AI", tags: ["Research", "Trends"], uploadDate: "2024-03-15", status: "Active" },
-  { id: "2", name: "https://techcrunch.com/ai-trends", type: "URL", topic: "Technology", tags: ["News", "Real-time"], uploadDate: "2024-03-14", status: "Active" },
-  { id: "3", name: "Bloomberg Finance Data Feed", type: "URL", topic: "Finance", tags: ["API", "Market Data", "Real-time"], uploadDate: "2024-03-12", status: "Active" },
-  { id: "4", name: "ESPN Sports Analytics", type: "URL", topic: "Sports", tags: ["Analytics", "Real-time"], uploadDate: "2024-03-10", status: "Processing" },
-  { id: "5", name: "McKinsey Industry Insights", type: "URL", topic: "General", tags: ["Report", "Enterprise"], uploadDate: "2024-03-08", status: "Active" },
-  { id: "6", name: "OpenAI Research Papers", type: "URL", topic: "AI", tags: ["Academic", "Research", "Open Source"], uploadDate: "2024-03-05", status: "Error" },
-];
-
-const stats = [
-  { label: "Total Sources", value: "24", change: "+3 this week", icon: Database, gradient: "gradient-blue" },
-  { label: "Topics", value: "5", change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
-];
+import {
+  useDataSources, useDataSourceStats, useActivityLog,
+  useTopics, useTags, useCreateDataSource, useDeleteDataSource,
+} from "@/hooks/use-data-sources";
+import { useToast } from "@/hooks/use-toast";
 
 export default function KnowledgeBasePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [topicFilter, setTopicFilter] = useState("All");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const { toast } = useToast();
 
-  const filtered = mockSources.filter((s) => {
-    const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchTopic = topicFilter === "All" || s.topic === topicFilter;
-    return matchSearch && matchTopic;
+  const { data: sourcesData, isLoading } = useDataSources({
+    search: searchQuery || undefined,
+    topic: topicFilter !== "All" ? topicFilter : undefined,
   });
+  const { data: statsData } = useDataSourceStats();
+  const { data: activityLog } = useActivityLog();
+  const { data: topicsList } = useTopics();
+  const deleteMutation = useDeleteDataSource();
+
+  const sources = sourcesData?.items ?? [];
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast({ title: "Data source removed" });
+    } catch {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    }
+  };
+
+  const statCards = [
+    { label: "Total Sources", value: String(statsData?.total_sources ?? 0), change: `${sourcesData?.total ?? 0} shown`, icon: Database, gradient: "gradient-blue" },
+    { label: "Topics", value: String(statsData?.topic_count ?? 0), change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
+  ];
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -71,7 +69,7 @@ export default function KnowledgeBasePage() {
               className="bg-card border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option>All</option>
-              {PREDEFINED_TOPICS.map(t => <option key={t}>{t}</option>)}
+              {(topicsList ?? []).map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <button
@@ -85,7 +83,7 @@ export default function KnowledgeBasePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4">
-          {stats.map((stat, i) => (
+          {statCards.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -128,7 +126,22 @@ export default function KnowledgeBasePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((source, i) => (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
+                    </td>
+                  </tr>
+                ) : sources.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center">
+                      <Database className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">No data sources found</p>
+                    </td>
+                  </tr>
+                ) : (
+                  sources.map((source, i) => (
                   <motion.tr
                     key={source.id}
                     initial={{ opacity: 0 }}
@@ -141,7 +154,7 @@ export default function KnowledgeBasePage() {
                         <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
                           <Globe className="w-4 h-4 text-accent-foreground" />
                         </div>
-                        <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
+                        <span className="text-sm font-medium text-foreground truncate">{source.title}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -163,7 +176,7 @@ export default function KnowledgeBasePage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Clock className="w-3 h-3" />
-                        {source.uploadDate}
+                        {source.created_at ? new Date(source.created_at).toLocaleDateString() : "—"}
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -171,14 +184,17 @@ export default function KnowledgeBasePage() {
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button
-                        className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => handleDelete(source.id)}
+                        disabled={deleteMutation.isPending}
+                        className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </motion.tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
@@ -188,19 +204,19 @@ export default function KnowledgeBasePage() {
         <div className="bg-card border border-border rounded-md p-5 shadow-sm">
           <h3 className="text-sm font-bold mb-4 text-foreground uppercase tracking-wide">Recent Activity</h3>
           <div className="space-y-3">
-            {[
-              { action: "Added", source: "Gartner AI Hype Cycle 2024", time: "2 hours ago", color: "bg-bosch-green" },
-              { action: "Updated", source: "Bloomberg Finance Data Feed", time: "5 hours ago", color: "bg-bosch-blue" },
-              { action: "Removed", source: "Outdated Report Q2", time: "1 day ago", color: "bg-bosch-red" },
-            ].map((log, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm py-2.5 px-3 rounded-xl hover:bg-accent/40 transition-colors">
-                <div className={`w-2 h-2 rounded-full ${log.color} shrink-0`} />
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{log.action}</span> {log.source}
-                </span>
-                <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">{log.time}</span>
-              </div>
-            ))}
+            {(activityLog ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No recent activity</p>
+            ) : (
+              (activityLog ?? []).map((log, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm py-2.5 px-3 rounded-xl hover:bg-accent/40 transition-colors">
+                  <div className={`w-2 h-2 rounded-full ${log.color} shrink-0`} />
+                  <span className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">{log.action}</span> {log.source}
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">{log.time}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -219,21 +235,29 @@ export default function KnowledgeBasePage() {
 }
 
 function CreateSourceForm({ onClose }: { onClose: () => void }) {
+  const [url, setUrl] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("");
-  const [customTopic, setCustomTopic] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
   const [showTopicDropdown, setShowTopicDropdown] = useState(false);
-
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [customTag, setCustomTag] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const { toast } = useToast();
 
-  const filteredTopics = PREDEFINED_TOPICS.filter(t =>
+  const { data: predefinedTopics } = useTopics();
+  const { data: predefinedTags } = useTags();
+  const createMutation = useCreateDataSource();
+
+  const allTopics = predefinedTopics ?? [];
+  const allTags = predefinedTags ?? [];
+
+  const filteredTopics = allTopics.filter(t =>
     t.toLowerCase().includes(topicSearch.toLowerCase())
   );
 
-  const filteredTags = PREDEFINED_TAGS.filter(t =>
+  const filteredTags = allTags.filter(t =>
     t.toLowerCase().includes(tagSearch.toLowerCase()) && !selectedTags.includes(t)
   );
 
@@ -241,13 +265,6 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
     setSelectedTopic(topic);
     setTopicSearch("");
     setShowTopicDropdown(false);
-  };
-
-  const handleAddCustomTopic = () => {
-    if (customTopic.trim()) {
-      setSelectedTopic(customTopic.trim());
-      setCustomTopic("");
-    }
   };
 
   const handleAddTag = (tag: string) => {
@@ -258,15 +275,28 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
     setShowTagDropdown(false);
   };
 
-  const handleAddCustomTag = () => {
-    if (customTag.trim() && !selectedTags.includes(customTag.trim())) {
-      setSelectedTags(prev => [...prev, customTag.trim()]);
-      setCustomTag("");
-    }
-  };
-
   const removeTag = (tag: string) => {
     setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
+
+  const handleSubmit = async () => {
+    if (!url.trim() || !title.trim() || !selectedTopic) {
+      toast({ title: "Please fill in URL, Title, and Topic", variant: "destructive" });
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        url: url.trim(),
+        title: title.trim(),
+        description: description.trim() || undefined,
+        topic: selectedTopic,
+        tags: selectedTags,
+      });
+      toast({ title: "Data source added successfully" });
+      onClose();
+    } catch {
+      toast({ title: "Failed to add data source", variant: "destructive" });
+    }
   };
 
   return (
@@ -275,6 +305,8 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
         <label className="text-sm font-medium text-foreground">Webpage URL</label>
         <input
           type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com/report"
           className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
         />
@@ -283,6 +315,8 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
         <label className="text-sm font-medium text-foreground">Title</label>
         <input
           type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="Source title"
           className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
         />
@@ -290,6 +324,8 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
       <div>
         <label className="text-sm font-medium text-foreground">Description</label>
         <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Brief description…"
           rows={2}
           className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring resize-none"
@@ -328,7 +364,7 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
                       {topic}
                     </button>
                   ))}
-                  {topicSearch.trim() && !PREDEFINED_TOPICS.some(t => t.toLowerCase() === topicSearch.toLowerCase()) && (
+                  {topicSearch.trim() && !allTopics.some(t => t.toLowerCase() === topicSearch.toLowerCase()) && (
                     <button
                       onClick={() => { handleSelectTopic(topicSearch.trim()); }}
                       className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-accent transition-colors border-t border-border"
@@ -383,7 +419,7 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
                   {tag}
                 </button>
               ))}
-              {tagSearch.trim() && !PREDEFINED_TAGS.some(t => t.toLowerCase() === tagSearch.toLowerCase()) && !selectedTags.includes(tagSearch.trim()) && (
+              {tagSearch.trim() && !allTags.some(t => t.toLowerCase() === tagSearch.toLowerCase()) && !selectedTags.includes(tagSearch.trim()) && (
                 <button
                   onClick={() => { handleAddTag(tagSearch.trim()); }}
                   className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-accent transition-colors border-t border-border"
@@ -404,8 +440,14 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
         >
           Cancel
         </button>
-        <button className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored">
-          Add Source
+        <button
+          onClick={handleSubmit}
+          disabled={createMutation.isPending}
+          className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored disabled:opacity-50"
+        >
+          {createMutation.isPending ? (
+            <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Adding…</span>
+          ) : "Add Source"}
         </button>
       </div>
     </div>

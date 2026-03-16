@@ -14,13 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-
-const mockWorkflows = [
-  { id: "1", title: "AI News Digest", topic: "AI", agents: ["News Aggregator", "Sentiment Analyzer"], dataSources: ["Gartner AI Hype Cycle 2024", "OpenAI Research Papers"] },
-  { id: "2", title: "Market Trend Analysis", topic: "Finance", agents: ["Trend Detector", "Report Generator"], dataSources: ["Bloomberg Finance API"] },
-  { id: "3", title: "Tech Industry Monitor", topic: "Technology", agents: ["News Aggregator", "Data Extractor", "Report Generator"], dataSources: ["TechCrunch AI Trends"] },
-  { id: "4", title: "Sports Analytics Weekly", topic: "Sports", agents: ["Data Extractor", "Sentiment Analyzer"], dataSources: ["ESPN Sports Analytics"] },
-];
+import { useWorkflows } from "@/hooks/use-workflows";
+import { useRunWorkflow, useRunStatus, useRunLogs, useRunReport } from "@/hooks/use-runs";
+import { runsApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type RunStatus = "idle" | "running" | "completed" | "failed";
 
@@ -29,61 +26,6 @@ interface LogEntry {
   message: string;
   type: "info" | "success" | "error" | "warning";
 }
-
-const MOCK_LOGS: LogEntry[] = [
-  { time: "00:00", message: "Initializing workflow execution…", type: "info" },
-  { time: "00:02", message: "Connecting to data sources…", type: "info" },
-  { time: "00:05", message: "Data source connection established", type: "success" },
-  { time: "00:08", message: "Agent: News Aggregator — scanning 12 sources…", type: "info" },
-  { time: "00:15", message: "Agent: News Aggregator — collected 47 articles", type: "success" },
-  { time: "00:18", message: "Agent: Sentiment Analyzer — processing articles…", type: "info" },
-  { time: "00:32", message: "Agent: Sentiment Analyzer — analysis complete", type: "success" },
-  { time: "00:35", message: "Generating output report…", type: "info" },
-  { time: "00:42", message: "Report generated successfully", type: "success" },
-  { time: "00:45", message: "Workflow execution completed", type: "success" },
-];
-
-const MOCK_REPORT = `# AI News Digest — Live Run Report
-
-## Executive Summary
-
-Today's AI landscape shows **significant momentum** in enterprise adoption, with 47 articles analyzed across major publications.
-
-## Key Findings
-
-### 1. Enterprise AI Adoption Accelerates
-Gartner reports that **65% of enterprises** have deployed at least one AI solution in production, up from 48% last year.
-
-- Cloud-based AI services grew **32% YoY**
-- On-premise deployments remain strong in regulated industries
-- Average ROI reported at **3.2x** within 18 months
-
-### 2. Generative AI in Production
-OpenAI's latest research papers highlight:
-- Improved reasoning capabilities in large language models
-- New benchmarks for code generation accuracy (**94.2% pass rate**)
-- Reduced hallucination rates by **40%** compared to previous models
-
-### 3. Regulatory Landscape
-| Region | Status | Key Focus |
-|--------|--------|-----------|
-| EU | Active | AI Act enforcement begins |
-| US | Proposed | Executive order on safe AI |
-| Asia | Mixed | Country-specific frameworks |
-
-## Sentiment Analysis
-
-- **Positive**: 68% of articles
-- **Neutral**: 22% of articles
-- **Negative**: 10% of articles
-
-> *"AI is no longer a competitive advantage — it's a competitive necessity."* — Gartner Report
-
-## Recommendations
-
-1. Monitor EU AI Act compliance requirements
-2. Evaluate generative AI for internal workflows
-3. Invest in AI literacy programs for teams`;
 
 // Simple markdown to HTML renderer
 function renderMarkdown(md: string): string {
@@ -122,13 +64,25 @@ export default function RunWorkflowPage() {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
   const [userPrompt, setUserPrompt] = useState("");
   const [status, setStatus] = useState<RunStatus>("idle");
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [runId, setRunId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [report, setReport] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  const selectedWorkflow = mockWorkflows.find(w => w.id === selectedWorkflowId);
+  // API hooks
+  const { data: workflowsData } = useWorkflows();
+  const workflowsList = workflowsData?.items ?? [];
+  const runMutation = useRunWorkflow();
+
+  const isPolling = status === "running";
+  const { data: runStatusData } = useRunStatus(runId, isPolling);
+  const { data: runLogsData } = useRunLogs(runId, isPolling);
+  const { data: reportData } = useRunReport(runId, status === "completed" && !report);
+
+  const selectedWorkflow = workflowsList.find(w => w.id === selectedWorkflowId);
 
   useEffect(() => {
     if (logRef.current) {
@@ -136,28 +90,50 @@ export default function RunWorkflowPage() {
     }
   }, [logs]);
 
-  const runWorkflow = () => {
+  // Sync polling data into local state
+  useEffect(() => {
+    if (runStatusData) {
+      setProgress(runStatusData.progress);
+      if (runStatusData.status === "completed" || runStatusData.status === "failed") {
+        setStatus(runStatusData.status as RunStatus);
+        // Fetch logs one final time to capture the last entries
+        if (runId) {
+          runsApi.logs(runId).then(data => setLogs(data)).catch(() => {});
+        }
+      }
+    }
+  }, [runStatusData, runId]);
+
+  useEffect(() => {
+    if (runLogsData) {
+      setLogs(runLogsData);
+    }
+  }, [runLogsData]);
+
+  useEffect(() => {
+    if (reportData?.report_markdown) {
+      setReport(reportData.report_markdown);
+    }
+  }, [reportData]);
+
+  const runWorkflow = async () => {
     if (!selectedWorkflowId) return;
     setStatus("running");
     setLogs([]);
     setReport(null);
     setProgress(0);
+    setRunId(null);
 
-    // Simulate log entries over time
-    MOCK_LOGS.forEach((log, i) => {
-      setTimeout(() => {
-        setLogs(prev => [...prev, log]);
-        setProgress(Math.round(((i + 1) / MOCK_LOGS.length) * 100));
-
-        // On last log, complete
-        if (i === MOCK_LOGS.length - 1) {
-          setTimeout(() => {
-            setStatus("completed");
-            setReport(MOCK_REPORT);
-          }, 500);
-        }
-      }, (i + 1) * 800);
-    });
+    try {
+      const result = await runMutation.mutateAsync({
+        workflowId: selectedWorkflowId,
+        userPrompt: userPrompt,
+      });
+      setRunId(result.run_id);
+    } catch {
+      setStatus("failed");
+      toast({ title: "Failed to start workflow", variant: "destructive" });
+    }
   };
 
   const resetRun = () => {
@@ -165,6 +141,7 @@ export default function RunWorkflowPage() {
     setLogs([]);
     setProgress(0);
     setReport(null);
+    setRunId(null);
   };
 
   const handleDownload = (format: "pdf" | "docx") => {
@@ -211,7 +188,7 @@ export default function RunWorkflowPage() {
                   <SelectValue placeholder="Choose a workflow to run…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockWorkflows.map(w => (
+                  {workflowsList.map(w => (
                     <SelectItem key={w.id} value={w.id}>
                       <span className="flex items-center gap-2">
                         <GitBranch className="w-3.5 h-3.5" />
@@ -238,9 +215,9 @@ export default function RunWorkflowPage() {
                   <div>
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Data Sources</p>
                     <div className="flex flex-wrap gap-1">
-                      {selectedWorkflow.dataSources.map(ds => (
-                        <span key={ds} className="inline-flex items-center gap-1 px-2 py-0.5 bg-card rounded-md text-[11px] font-medium text-foreground border border-border">
-                          <Database className="w-2.5 h-2.5" /> {ds}
+                      {selectedWorkflow.data_sources.map(ds => (
+                        <span key={ds.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-card rounded-md text-[11px] font-medium text-foreground border border-border">
+                          <Database className="w-2.5 h-2.5" /> {ds.title}
                         </span>
                       ))}
                     </div>
@@ -249,8 +226,8 @@ export default function RunWorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Agents</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedWorkflow.agents.map(a => (
-                        <span key={a} className="inline-flex items-center gap-1 px-2 py-0.5 bg-bosch-purple/10 rounded-md text-[11px] font-medium text-bosch-purple">
-                          <Bot className="w-2.5 h-2.5" /> {a}
+                        <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-bosch-purple/10 rounded-md text-[11px] font-medium text-bosch-purple">
+                          <Bot className="w-2.5 h-2.5" /> {a.name}
                         </span>
                       ))}
                     </div>

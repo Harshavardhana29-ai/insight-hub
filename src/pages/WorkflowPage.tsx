@@ -2,70 +2,19 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, GitBranch, Edit, Trash2, Bot, Database,
-  Workflow, Zap, Search, X, ChevronDown,
+  Workflow, Zap, Search, X, ChevronDown, Loader2,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-
-interface WorkflowItem {
-  id: string;
-  title: string;
-  dataSources: string[];
-  agents: string[];
-  topic: string;
-  status: string;
-  createdAt: string;
-}
-
-// Agents mapped by topic
-const topicAgents: Record<string, string[]> = {
-  AI: ["News Aggregator", "Sentiment Analyzer", "Trend Detector"],
-  Technology: ["News Aggregator", "Data Extractor", "Report Generator"],
-  Finance: ["Trend Detector", "Report Generator", "Data Extractor"],
-  Sports: ["Data Extractor", "Sentiment Analyzer"],
-  General: ["News Aggregator", "Report Generator"],
-};
-
-const mockDataSources = [
-  { id: "1", name: "Gartner AI Hype Cycle 2024", topic: "AI" },
-  { id: "2", name: "TechCrunch AI Trends", topic: "Technology" },
-  { id: "3", name: "Bloomberg Finance API", topic: "Finance" },
-  { id: "4", name: "ESPN Sports Analytics", topic: "Sports" },
-  { id: "5", name: "McKinsey Quarterly Report", topic: "General" },
-  { id: "6", name: "OpenAI Research Papers", topic: "AI" },
-];
-
-const mockWorkflows: WorkflowItem[] = [
-  {
-    id: "1", title: "AI News Digest",
-    dataSources: ["Gartner AI Hype Cycle 2024", "OpenAI Research Papers"],
-    agents: ["News Aggregator", "Sentiment Analyzer"],
-    topic: "AI", status: "Active", createdAt: "2024-03-15",
-  },
-  {
-    id: "2", title: "Market Trend Analysis",
-    dataSources: ["Bloomberg Finance API"],
-    agents: ["Trend Detector", "Report Generator"],
-    topic: "Finance", status: "Active", createdAt: "2024-03-12",
-  },
-  {
-    id: "3", title: "Tech Industry Monitor",
-    dataSources: ["TechCrunch AI Trends"],
-    agents: ["News Aggregator", "Data Extractor", "Report Generator"],
-    topic: "Technology", status: "Draft", createdAt: "2024-03-10",
-  },
-  {
-    id: "4", title: "Sports Analytics Weekly",
-    dataSources: ["ESPN Sports Analytics"],
-    agents: ["Data Extractor", "Sentiment Analyzer"],
-    topic: "Sports", status: "Active", createdAt: "2024-03-08",
-  },
-];
-
-const topics = ["AI", "Sports", "Finance", "Technology", "General"];
+import { useWorkflows, useWorkflowStats, useCreateWorkflow, useUpdateWorkflow, useDeleteWorkflow } from "@/hooks/use-workflows";
+import { useDataSources } from "@/hooks/use-data-sources";
+import { useAgentsByTopics, useTopicAgentMapping } from "@/hooks/use-agents";
+import { useTopics } from "@/hooks/use-data-sources";
+import { useToast } from "@/hooks/use-toast";
+import type { WorkflowResponse, AgentResponse } from "@/lib/api";
 
 const topicGradient: Record<string, string> = {
   AI: "gradient-purple",
@@ -162,52 +111,77 @@ function SearchableDropdown({
 
 export default function WorkflowPage() {
   const [showModal, setShowModal] = useState(false);
-  const [editingWorkflow, setEditingWorkflow] = useState<WorkflowItem | null>(null);
-  const [workflows, setWorkflows] = useState(mockWorkflows);
+  const [editingWorkflow, setEditingWorkflow] = useState<WorkflowResponse | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const { toast } = useToast();
+
+  // API hooks
+  const { data: workflowsData, isLoading } = useWorkflows(selectedTopic !== "all" ? selectedTopic : undefined);
+  const { data: statsData } = useWorkflowStats();
+  const { data: topicsList } = useTopics();
+  const { data: allDataSourcesData } = useDataSources();
+  const { data: topicAgentMap } = useTopicAgentMapping();
+  const deleteMutation = useDeleteWorkflow();
+
+  const workflows = workflowsData?.items ?? [];
+  const allDataSources = allDataSourcesData?.items ?? [];
+  const topics = topicsList ?? [];
+  const topicAgents: Record<string, string[]> = useMemo(() => {
+    if (!topicAgentMap?.mapping) return {};
+    const result: Record<string, string[]> = {};
+    for (const [topic, agents] of Object.entries(topicAgentMap.mapping)) {
+      result[topic] = agents.map((a: AgentResponse) => a.name);
+    }
+    return result;
+  }, [topicAgentMap]);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
   const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
-  const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>(["AI"]);
+  const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>([]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
   const [individualTopicFilter, setIndividualTopicFilter] = useState<string>("all");
 
   const isEdit = !!editingWorkflow;
 
   // Derive available agents from selected topics + individual sources
-  const availableAgents = useMemo(() => {
-    const relevantTopics = new Set<string>();
+  const relevantTopics = useMemo(() => {
+    const topicSet = new Set<string>();
     if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
-      selectedSourceTopics.forEach((t) => relevantTopics.add(t));
+      selectedSourceTopics.forEach((t) => topicSet.add(t));
     }
     if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
       selectedIndividualSources.forEach((id) => {
-        const ds = mockDataSources.find((s) => s.id === id);
-        if (ds) relevantTopics.add(ds.topic);
+        const ds = allDataSources.find((s) => s.id === id);
+        if (ds) topicSet.add(ds.topic);
       });
     }
-    const agents = new Set<string>();
-    relevantTopics.forEach((t) => {
-      (topicAgents[t] || []).forEach((a) => agents.add(a));
-    });
-    return Array.from(agents);
-  }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources]);
+    return Array.from(topicSet);
+  }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources, allDataSources]);
+
+  const { data: availableAgentsFromApi } = useAgentsByTopics(relevantTopics);
+
+  const availableAgents = useMemo(() => {
+    return (availableAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name }));
+  }, [availableAgentsFromApi]);
 
   // Filter individual sources by topic filter
   const filteredIndividualSources = useMemo(() => {
     if (sourceSelectionMode === "both") {
-      // In "both" mode, filter by selected topics
-      return mockDataSources.filter(ds => selectedSourceTopics.includes(ds.topic));
+      return allDataSources.filter(ds => selectedSourceTopics.includes(ds.topic));
     }
-    if (individualTopicFilter === "all") return mockDataSources;
-    return mockDataSources.filter(ds => ds.topic === individualTopicFilter);
-  }, [sourceSelectionMode, selectedSourceTopics, individualTopicFilter]);
+    if (individualTopicFilter === "all") return allDataSources;
+    return allDataSources.filter(ds => ds.topic === individualTopicFilter);
+  }, [sourceSelectionMode, selectedSourceTopics, individualTopicFilter, allDataSources]);
 
-  const toggleAgent = (agent: string) => {
+  const toggleAgent = (agentName: string, agentId: string) => {
     setSelectedAgents((prev) =>
-      prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]
+      prev.includes(agentName) ? prev.filter((a) => a !== agentName) : [...prev, agentName]
+    );
+    setSelectedAgentIds((prev) =>
+      prev.includes(agentId) ? prev.filter((a) => a !== agentId) : [...prev, agentId]
     );
   };
 
@@ -226,8 +200,9 @@ export default function WorkflowPage() {
   const resetForm = () => {
     setFormTitle("");
     setSelectedAgents([]);
+    setSelectedAgentIds([]);
     setSourceSelectionMode("topic");
-    setSelectedSourceTopics(["AI"]);
+    setSelectedSourceTopics([]);
     setSelectedIndividualSources([]);
     setEditingWorkflow(null);
     setIndividualTopicFilter("all");
@@ -238,19 +213,14 @@ export default function WorkflowPage() {
     setShowModal(true);
   };
 
-  const openEdit = (workflow: WorkflowItem) => {
+  const openEdit = (workflow: WorkflowResponse) => {
     setEditingWorkflow(workflow);
     setFormTitle(workflow.title);
-    setSelectedAgents([...workflow.agents]);
+    setSelectedAgents(workflow.agents.map(a => a.name));
+    setSelectedAgentIds(workflow.agents.map(a => a.id));
 
-    const workflowSourceIds = workflow.dataSources
-      .map((name) => mockDataSources.find((ds) => ds.name === name)?.id)
-      .filter(Boolean) as string[];
-    const workflowSourceTopics = [...new Set(
-      workflow.dataSources
-        .map((name) => mockDataSources.find((ds) => ds.name === name)?.topic)
-        .filter(Boolean) as string[]
-    )];
+    const workflowSourceIds = workflow.data_sources.map(ds => ds.id);
+    const workflowSourceTopics = [...new Set(workflow.data_sources.map(ds => ds.topic))];
 
     setSelectedSourceTopics(workflowSourceTopics.length > 0 ? workflowSourceTopics : [workflow.topic]);
     setSelectedIndividualSources(workflowSourceIds);
@@ -258,32 +228,71 @@ export default function WorkflowPage() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (isEdit && editingWorkflow) {
-      const sourceNames = new Set<string>();
-      if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
-        mockDataSources.filter(ds => selectedSourceTopics.includes(ds.topic)).forEach(ds => sourceNames.add(ds.name));
-      }
-      if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
-        selectedIndividualSources.forEach(id => {
-          const ds = mockDataSources.find(s => s.id === id);
-          if (ds) sourceNames.add(ds.name);
-        });
-      }
+  const createMutation = useCreateWorkflow();
+  const updateMutation = useUpdateWorkflow();
 
-      setWorkflows(prev => prev.map(w => w.id === editingWorkflow.id ? {
-        ...w,
-        title: formTitle || w.title,
-        dataSources: Array.from(sourceNames),
-        agents: selectedAgents,
-        topic: selectedSourceTopics[0] || w.topic,
-      } : w));
+  const handleSave = async () => {
+    if (!formTitle.trim()) {
+      toast({ title: "Please enter a workflow title", variant: "destructive" });
+      return;
     }
-    setShowModal(false);
-    resetForm();
+
+    // Collect data source IDs
+    const dsIds = new Set<string>();
+    if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
+      allDataSources
+        .filter(ds => selectedSourceTopics.includes(ds.topic))
+        .forEach(ds => dsIds.add(ds.id));
+    }
+    if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
+      selectedIndividualSources.forEach(id => dsIds.add(id));
+    }
+
+    const primaryTopic = selectedSourceTopics[0] || relevantTopics[0] || "General";
+
+    try {
+      if (isEdit && editingWorkflow) {
+        await updateMutation.mutateAsync({
+          id: editingWorkflow.id,
+          data: {
+            title: formTitle,
+            topic: primaryTopic,
+            source_selection_mode: sourceSelectionMode,
+            selected_topics: selectedSourceTopics,
+            data_source_ids: Array.from(dsIds),
+            agent_ids: selectedAgentIds,
+          },
+        });
+        toast({ title: "Workflow updated" });
+      } else {
+        await createMutation.mutateAsync({
+          title: formTitle,
+          topic: primaryTopic,
+          status: "Draft",
+          source_selection_mode: sourceSelectionMode,
+          selected_topics: selectedSourceTopics,
+          data_source_ids: Array.from(dsIds),
+          agent_ids: selectedAgentIds,
+        });
+        toast({ title: "Workflow created" });
+      }
+      setShowModal(false);
+      resetForm();
+    } catch {
+      toast({ title: "Failed to save workflow", variant: "destructive" });
+    }
   };
 
-  const filteredWorkflows = workflows.filter((w) => selectedTopic === "all" || w.topic === selectedTopic);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast({ title: "Workflow deleted" });
+    } catch {
+      toast({ title: "Failed to delete workflow", variant: "destructive" });
+    }
+  };
+
+  const filteredWorkflows = workflows;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -313,8 +322,8 @@ export default function WorkflowPage() {
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-4">
           {[
-            { label: "Total", value: workflows.length, icon: Workflow, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
-            { label: "Agents Used", value: new Set(workflows.flatMap(w => w.agents)).size, icon: Bot, color: "border-l-bosch-turquoise", iconBg: "bg-bosch-turquoise/10 text-bosch-turquoise" },
+            { label: "Total", value: statsData?.total ?? workflows.length, icon: Workflow, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
+            { label: "Agents Used", value: statsData?.agents_used ?? 0, icon: Bot, color: "border-l-bosch-turquoise", iconBg: "bg-bosch-turquoise/10 text-bosch-turquoise" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -373,7 +382,7 @@ export default function WorkflowPage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-foreground">{workflow.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">Created {workflow.createdAt}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Created {new Date(workflow.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -386,7 +395,7 @@ export default function WorkflowPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
+                      <button onClick={() => handleDelete(workflow.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -397,10 +406,10 @@ export default function WorkflowPage() {
                   <div>
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Data Sources</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {workflow.dataSources.map((ds) => (
-                        <span key={ds} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
+                      {workflow.data_sources.map((ds) => (
+                        <span key={ds.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
                           <Database className="w-3 h-3" />
-                          {ds}
+                          {ds.title}
                         </span>
                       ))}
                     </div>
@@ -409,9 +418,9 @@ export default function WorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Agents</p>
                     <div className="flex flex-wrap gap-1.5">
                       {workflow.agents.map((agent) => (
-                        <span key={agent} className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-purple/10 rounded-lg text-xs font-medium text-bosch-purple">
+                        <span key={agent.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-purple/10 rounded-lg text-xs font-medium text-bosch-purple">
                           <Bot className="w-3 h-3" />
-                          {agent}
+                          {agent.name}
                         </span>
                       ))}
                     </div>
@@ -512,7 +521,7 @@ export default function WorkflowPage() {
                     {sourceSelectionMode === "both" ? "Select individual sources (filtered by selected topics)" : "Select individual sources"}
                   </p>
                   <SearchableDropdown
-                    options={filteredIndividualSources.map(ds => ({ id: ds.id, label: ds.name, extra: ds.topic }))}
+                    options={filteredIndividualSources.map(ds => ({ id: ds.id, label: ds.title, extra: ds.topic }))}
                     selected={selectedIndividualSources}
                     onToggle={toggleSource}
                     placeholder="Search data sources…"
@@ -526,11 +535,11 @@ export default function WorkflowPage() {
                   {selectedIndividualSources.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {selectedIndividualSources.map(id => {
-                        const ds = mockDataSources.find(s => s.id === id);
+                        const ds = allDataSources.find(s => s.id === id);
                         return ds ? (
                           <span key={id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
                             <Database className="w-3 h-3" />
-                            {ds.name}
+                            {ds.title}
                             <button onClick={() => toggleSource(id)} className="hover:text-destructive transition-colors">
                               <X className="w-3 h-3" />
                             </button>
@@ -554,16 +563,16 @@ export default function WorkflowPage() {
               <div className="flex flex-wrap gap-2">
                 {availableAgents.map((agent) => (
                   <button
-                    key={agent}
-                    onClick={() => toggleAgent(agent)}
+                    key={agent.id}
+                    onClick={() => toggleAgent(agent.name, agent.id)}
                     className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all border ${
-                      selectedAgents.includes(agent)
+                      selectedAgents.includes(agent.name)
                         ? "gradient-purple text-primary-foreground border-transparent shadow-sm"
                         : "bg-card text-foreground border-border hover:border-bosch-purple/40 hover:bg-bosch-purple/5"
                     }`}
                   >
                     <Bot className="w-3.5 h-3.5" />
-                    {agent}
+                    {agent.name}
                   </button>
                 ))}
                 {availableAgents.length === 0 && (
@@ -582,7 +591,8 @@ export default function WorkflowPage() {
             </button>
             <button
               onClick={handleSave}
-              className={`px-5 py-2.5 text-sm rounded-md ${isEdit ? "gradient-turquoise" : "gradient-blue"} text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored`}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className={`px-5 py-2.5 text-sm rounded-md ${isEdit ? "gradient-turquoise" : "gradient-blue"} text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored disabled:opacity-50`}
             >
               {isEdit ? "Update Workflow" : "Create Workflow"}
             </button>
