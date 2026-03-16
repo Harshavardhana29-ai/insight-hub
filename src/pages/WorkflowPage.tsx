@@ -149,9 +149,11 @@ export default function WorkflowPage() {
   // Derive available agents from selected topics + individual sources
   const relevantTopics = useMemo(() => {
     const topicSet = new Set<string>();
+    // Always include selected topics
     if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
       selectedSourceTopics.forEach((t) => topicSet.add(t));
     }
+    // Always include topics from individually selected sources
     if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
       selectedIndividualSources.forEach((id) => {
         const ds = allDataSources.find((s) => s.id === id);
@@ -169,12 +171,13 @@ export default function WorkflowPage() {
 
   // Filter individual sources by topic filter
   const filteredIndividualSources = useMemo(() => {
+    // In "both" mode, show ALL data sources so user can add extras from any topic
     if (sourceSelectionMode === "both") {
-      return allDataSources.filter(ds => selectedSourceTopics.includes(ds.topic));
+      return allDataSources;
     }
     if (individualTopicFilter === "all") return allDataSources;
     return allDataSources.filter(ds => ds.topic === individualTopicFilter);
-  }, [sourceSelectionMode, selectedSourceTopics, individualTopicFilter, allDataSources]);
+  }, [sourceSelectionMode, individualTopicFilter, allDataSources]);
 
   const toggleAgent = (agentName: string, agentId: string) => {
     setSelectedAgents((prev) =>
@@ -518,7 +521,7 @@ export default function WorkflowPage() {
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground mb-1.5 mt-2">
-                    {sourceSelectionMode === "both" ? "Select individual sources (filtered by selected topics)" : "Select individual sources"}
+                    {sourceSelectionMode === "both" ? "Add extra data sources from any topic" : "Select individual sources"}
                   </p>
                   <SearchableDropdown
                     options={filteredIndividualSources.map(ds => ({ id: ds.id, label: ds.title, extra: ds.topic }))}

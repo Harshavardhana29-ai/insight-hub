@@ -144,15 +144,90 @@ export default function RunWorkflowPage() {
     setRunId(null);
   };
 
-  const handleDownload = (format: "pdf" | "docx") => {
-    // Mock download - in production this would generate actual files
-    const blob = new Blob([report || ""], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `report.${format === "pdf" ? "pdf" : "docx"}`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async (format: "pdf" | "docx") => {
+    if (!report) return;
+    const html = renderMarkdown(report);
+    const title = selectedWorkflow?.title || "Report";
+    const timestamp = new Date().toLocaleDateString();
+
+    if (format === "pdf") {
+      try {
+        const { default: jsPDF } = await import("jspdf");
+        const { default: html2canvas } = await import("html2canvas");
+
+        // Create a hidden container with styled HTML for rendering
+        const container = document.createElement("div");
+        container.style.cssText = "position:absolute;left:-9999px;top:0;width:800px;padding:40px;background:#fff;font-family:Arial,sans-serif;color:#111;";
+        container.innerHTML = `
+          <div style="border-bottom:2px solid #007bc0;padding-bottom:12px;margin-bottom:24px;">
+            <h1 style="font-size:22px;margin:0 0 4px 0;color:#007bc0;">${title}</h1>
+            <p style="font-size:12px;color:#666;margin:0;">Generated on ${timestamp}</p>
+          </div>
+          <div style="font-size:14px;line-height:1.7;">${html}</div>
+        `;
+        document.body.appendChild(container);
+
+        const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+        document.body.removeChild(container);
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 10;
+        const contentWidth = pageWidth - margin * 2;
+        const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+        let yOffset = 0;
+        while (yOffset < imgHeight) {
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(imgData, "PNG", margin, margin - yOffset, contentWidth, imgHeight);
+          yOffset += pageHeight - margin * 2;
+        }
+
+        pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, "_")}_report.pdf`);
+        toast({ title: "PDF downloaded successfully" });
+      } catch {
+        toast({ title: "Failed to generate PDF", variant: "destructive" });
+      }
+    } else {
+      // Word (docx) — generate a proper .doc file via HTML with MS Word XML headers
+      const docContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:w="urn:schemas-microsoft-com:office:word"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #333; line-height: 1.6; margin: 40px; }
+            h1 { font-size: 20pt; color: #007bc0; border-bottom: 2px solid #007bc0; padding-bottom: 8px; }
+            h2 { font-size: 16pt; color: #333; margin-top: 24px; }
+            h3 { font-size: 13pt; color: #555; }
+            strong { font-weight: bold; }
+            ul, ol { margin-left: 20px; }
+            li { margin-bottom: 4px; }
+            blockquote { border-left: 3px solid #007bc0; padding-left: 12px; color: #666; font-style: italic; }
+            table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 10pt; }
+            th { background: #f0f0f0; font-weight: bold; }
+            code { background: #f4f4f4; padding: 2px 4px; font-family: Consolas, monospace; font-size: 10pt; }
+            pre { background: #f4f4f4; padding: 12px; border: 1px solid #ddd; font-family: Consolas, monospace; font-size: 10pt; }
+            hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>${title}</h1>
+          <p style="font-size:9pt;color:#999;">Generated on ${timestamp}</p>
+          <hr/>
+          ${html}
+        </body>
+        </html>
+      `;
+      const blob = new Blob([docContent], { type: "application/msword" });
+      const { saveAs } = await import("file-saver");
+      saveAs(blob, `${title.replace(/[^a-zA-Z0-9]/g, "_")}_report.doc`);
+      toast({ title: "Word document downloaded successfully" });
+    }
   };
 
   const logTypeIcon = (type: LogEntry["type"]) => {
