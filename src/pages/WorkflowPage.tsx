@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useWorkflows, useWorkflowStats, useCreateWorkflow, useUpdateWorkflow, useDeleteWorkflow } from "@/hooks/use-workflows";
 import { useDataSources } from "@/hooks/use-data-sources";
-import { useAgentsByTopics, useTopicAgentMapping } from "@/hooks/use-agents";
+import { useAgents, useAgentsByTopics, useTopicAgentMapping } from "@/hooks/use-agents";
 import { useTopics } from "@/hooks/use-data-sources";
 import { useToast } from "@/hooks/use-toast";
 import type { WorkflowResponse, AgentResponse } from "@/lib/api";
@@ -139,7 +139,7 @@ export default function WorkflowPage() {
   const [formTitle, setFormTitle] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual">("topic");
+  const [sourceSelectionMode, setSourceSelectionMode] = useState<"topic" | "both" | "individual" | "prompt_only">("topic");
   const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>([]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
   const [individualTopicFilter, setIndividualTopicFilter] = useState<string>("all");
@@ -148,6 +148,7 @@ export default function WorkflowPage() {
 
   // Derive available agents from selected topics + individual sources
   const relevantTopics = useMemo(() => {
+    if (sourceSelectionMode === "prompt_only") return [];
     const topicSet = new Set<string>();
     // Always include selected topics
     if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
@@ -164,10 +165,14 @@ export default function WorkflowPage() {
   }, [sourceSelectionMode, selectedSourceTopics, selectedIndividualSources, allDataSources]);
 
   const { data: availableAgentsFromApi } = useAgentsByTopics(relevantTopics);
+  const { data: allAgentsFromApi } = useAgents();
 
   const availableAgents = useMemo(() => {
+    if (sourceSelectionMode === "prompt_only") {
+      return (allAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name }));
+    }
     return (availableAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name }));
-  }, [availableAgentsFromApi]);
+  }, [sourceSelectionMode, availableAgentsFromApi, allAgentsFromApi]);
 
   // Filter individual sources by topic filter
   const filteredIndividualSources = useMemo(() => {
@@ -240,18 +245,20 @@ export default function WorkflowPage() {
       return;
     }
 
-    // Collect data source IDs
+    // Collect data source IDs (none for prompt_only)
     const dsIds = new Set<string>();
-    if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
-      allDataSources
-        .filter(ds => selectedSourceTopics.includes(ds.topic))
-        .forEach(ds => dsIds.add(ds.id));
-    }
-    if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
-      selectedIndividualSources.forEach(id => dsIds.add(id));
+    if (sourceSelectionMode !== "prompt_only") {
+      if (sourceSelectionMode === "topic" || sourceSelectionMode === "both") {
+        allDataSources
+          .filter(ds => selectedSourceTopics.includes(ds.topic))
+          .forEach(ds => dsIds.add(ds.id));
+      }
+      if (sourceSelectionMode === "individual" || sourceSelectionMode === "both") {
+        selectedIndividualSources.forEach(id => dsIds.add(id));
+      }
     }
 
-    const primaryTopic = selectedSourceTopics[0] || relevantTopics[0] || "General";
+    const primaryTopic = sourceSelectionMode === "prompt_only" ? "General" : (selectedSourceTopics[0] || relevantTopics[0] || "General");
 
     try {
       if (isEdit && editingWorkflow) {
@@ -409,12 +416,17 @@ export default function WorkflowPage() {
                   <div>
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Data Sources</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {workflow.data_sources.map((ds) => (
+                      {workflow.data_sources.length > 0 ? workflow.data_sources.map((ds) => (
                         <span key={ds.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
                           <Database className="w-3 h-3" />
                           {ds.title}
                         </span>
-                      ))}
+                      )) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-turquoise/10 rounded-lg text-xs font-medium text-bosch-turquoise">
+                          <Zap className="w-3 h-3" />
+                          Prompt Only
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -460,9 +472,10 @@ export default function WorkflowPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground">Data Sources</label>
-              <div className="flex gap-2 mt-1.5 mb-3">
+              <label className="text-sm font-medium text-foreground">Source Mode</label>
+              <div className="flex gap-2 mt-1.5 mb-3 flex-wrap">
                 {([
+                  { key: "prompt_only" as const, label: "Prompt Only" },
                   { key: "topic" as const, label: "By Topic" },
                   { key: "both" as const, label: "Topic + Sources" },
                   { key: "individual" as const, label: "Individual Sources" },
@@ -480,6 +493,10 @@ export default function WorkflowPage() {
                   </button>
                 ))}
               </div>
+
+              {sourceSelectionMode === "prompt_only" && (
+                <p className="text-xs text-muted-foreground italic">No data sources needed — agents will be called with your prompt only.</p>
+              )}
 
               {(sourceSelectionMode === "topic" || sourceSelectionMode === "both") && (
                 <div className="mb-3">
@@ -559,9 +576,11 @@ export default function WorkflowPage() {
             <div>
               <label className="text-sm font-medium text-foreground">Agents</label>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">
-                {availableAgents.length > 0
-                  ? "Available agents based on your selection"
-                  : "Select topics or data sources to see available agents"}
+                {sourceSelectionMode === "prompt_only"
+                  ? "Select agents to invoke with your prompt"
+                  : availableAgents.length > 0
+                    ? "Available agents based on your selection"
+                    : "Select topics or data sources to see available agents"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableAgents.map((agent) => (
@@ -579,7 +598,11 @@ export default function WorkflowPage() {
                   </button>
                 ))}
                 {availableAgents.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">No agents available — select a topic or data source first.</p>
+                  <p className="text-xs text-muted-foreground italic">
+                    {sourceSelectionMode === "prompt_only"
+                      ? "No agents found in the system."
+                      : "No agents available — select a topic or data source first."}
+                  </p>
                 )}
               </div>
             </div>
