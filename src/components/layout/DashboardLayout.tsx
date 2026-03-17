@@ -50,8 +50,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <span className="text-primary-foreground font-bold text-sm tracking-tight">MRA</span>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-primary-foreground leading-tight">Market Research Agent</h1>
-            <p className="text-[11px] text-primary-foreground/60 leading-tight">Powered by Bosch</p>
+            <h1 className="text-sm font-bold text-primary-foreground leading-tight">Market Research Agentic Suite</h1>
+            <p className="text-[11px] text-primary-foreground/60 leading-tight">Powered by BGSW/BDO</p>
           </div>
         </div>
 

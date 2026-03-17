@@ -495,7 +495,27 @@ export default function WorkflowPage() {
               </div>
 
               {sourceSelectionMode === "prompt_only" && (
-                <p className="text-xs text-muted-foreground italic">No data sources needed — agents will be called with your prompt only.</p>
+                <div className="px-3 py-2 rounded-lg bg-bosch-turquoise/5 border border-bosch-turquoise/20 mb-3">
+                  <p className="text-xs text-muted-foreground">💡 <strong>Prompt Only:</strong> No data sources or topics needed. Select agent(s) below and provide your prompt when running the workflow. The agent(s) will use their own knowledge to respond.</p>
+                </div>
+              )}
+
+              {sourceSelectionMode === "topic" && (
+                <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 mb-3">
+                  <p className="text-xs text-muted-foreground">💡 <strong>By Topic:</strong> Select one or more topics. All data sources tagged with those topics will be automatically included, and matching agents will become available.</p>
+                </div>
+              )}
+
+              {sourceSelectionMode === "both" && (
+                <div className="px-3 py-2 rounded-lg bg-bosch-purple/5 border border-bosch-purple/20 mb-3">
+                  <p className="text-xs text-muted-foreground">💡 <strong>Topic + Sources:</strong> Start by selecting topics, then optionally add individual data sources from any topic for more control.</p>
+                </div>
+              )}
+
+              {sourceSelectionMode === "individual" && (
+                <div className="px-3 py-2 rounded-lg bg-bosch-green/5 border border-bosch-green/20 mb-3">
+                  <p className="text-xs text-muted-foreground">💡 <strong>Individual Sources:</strong> Hand-pick specific data sources from any topic. Agents matching the selected sources' topics will become available.</p>
+                </div>
               )}
 
               {(sourceSelectionMode === "topic" || sourceSelectionMode === "both") && (
