@@ -16,8 +16,7 @@ import { cn } from "@/lib/utils";
 import { SettingsModal } from "./SettingsModal";
 
 const historyItems = [
-  { id: "h1", title: "Daily AI Briefing", date: "Mar 24, 2026", workflow: "AI News Digest", status: "Completed" },
-  { id: "h2", title: "Daily AI Briefing", date: "Mar 23, 2026", workflow: "AI News Digest", status: "Completed" },
+  { id: "h2", title: "Global Report on GCC", date: "Mar 25, 2026", workflow: "AI News Digest", status: "Completed" },
   { id: "h4", title: "Weekly Market Report", date: "Mar 11, 2024", workflow: "Market Trend Analysis", status: "Completed" },
 ];
 
