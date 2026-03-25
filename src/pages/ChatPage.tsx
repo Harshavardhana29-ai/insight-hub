@@ -449,23 +449,6 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                 What do you want to know today?
               </p>
 
-              {/* Quick suggestions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg mx-auto">
-                {[
-                  "Analyze latest AI industry trends",
-                  "Generate weekly market report",
-                  "Compare tech sector performance",
-                  "Summarize global finance news",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setUserPrompt(suggestion)}
-                    className="text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-sm text-foreground"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
             </motion.div>
           </div>
         ) : (

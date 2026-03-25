@@ -94,8 +94,8 @@ export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNew
                   <img src="/image.png" alt="Logo" className="w-full h-full object-contain p-0.5 bg-white" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground leading-tight">MR Agentic Suite</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">BGSW/BDO</p>
+                  <p className="text-xs font-bold text-foreground leading-tight">Market Research Agentic Suite</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Powered by BGSW/BDO</p>
                 </div>
               </div>
               <button
