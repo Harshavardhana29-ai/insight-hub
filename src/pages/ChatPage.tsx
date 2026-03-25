@@ -446,7 +446,7 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                 Market Research Assistant
               </h1>
               <p className="text-muted-foreground text-sm md:text-base mb-8">
-                Select a workflow and describe your research query to get started.
+                What do you want to know today?
               </p>
 
               {/* Quick suggestions */}
