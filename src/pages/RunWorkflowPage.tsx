@@ -572,9 +572,9 @@ export default function RunWorkflowPage() {
 
   const logTypeIcon = (type: LogEntry["type"]) => {
     switch (type) {
-      case "success": return <CheckCircle2 className="w-3.5 h-3.5 text-bosch-green shrink-0" />;
+      case "success": return <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />;
       case "error": return <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />;
-      case "warning": return <AlertTriangle className="w-3.5 h-3.5 text-bosch-yellow shrink-0" />;
+      case "warning": return <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />;
       default: return <Clock className="w-3.5 h-3.5 text-primary shrink-0" />;
     }
   };
@@ -641,7 +641,7 @@ export default function RunWorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Agents</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedWorkflow.agents.map(a => (
-                        <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-bosch-purple/10 rounded-md text-[11px] font-medium text-bosch-purple">
+                        <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-md text-[11px] font-medium text-primary">
                           <Bot className="w-2.5 h-2.5" /> {a.name}
                         </span>
                       ))}
@@ -708,7 +708,7 @@ export default function RunWorkflowPage() {
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full rounded-full ${
-                        status === "completed" ? "bg-bosch-green" : status === "failed" ? "bg-destructive" : "gradient-blue"
+                        status === "completed" ? "bg-primary" : status === "failed" ? "bg-destructive" : "gradient-blue"
                       }`}
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
@@ -734,9 +734,9 @@ export default function RunWorkflowPage() {
                         {logTypeIcon(log.type)}
                         <span className="text-muted-foreground shrink-0">[{log.time}]</span>
                         <span className={`${
-                          log.type === "success" ? "text-bosch-green" :
+                          log.type === "success" ? "text-primary" :
                           log.type === "error" ? "text-destructive" :
-                          log.type === "warning" ? "text-bosch-yellow" :
+                          log.type === "warning" ? "text-warning" :
                           "text-foreground"
                         }`}>
                           {log.message}
@@ -763,11 +763,11 @@ export default function RunWorkflowPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="rounded-md shadow-sm border-l-4 border-l-bosch-green">
+            <Card className="rounded-md shadow-sm border-l-4 border-l-primary">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-md bg-bosch-green/10 text-bosch-green flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                       <FileText className="w-4 h-4" />
                     </div>
                     <div>
