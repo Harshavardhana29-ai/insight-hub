@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, GitBranch, ChevronDown, Loader2, Bot,
-  FileText, Download, Eye, CheckCircle2, AlertTriangle, Clock, X,
+  FileText, Download, CheckCircle2, AlertTriangle, Clock, X, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
