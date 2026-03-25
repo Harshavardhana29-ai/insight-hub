@@ -81,20 +81,20 @@
   }
 
   .dark {
-    --background: 208 100% 7%;
-    --foreground: 216 100% 95%;
+    --background: 215 30% 8%;
+    --foreground: 213 20% 90%;
 
-    --card: 206 100% 10%;
-    --card-foreground: 216 100% 95%;
+    --card: 215 25% 11%;
+    --card-foreground: 213 20% 90%;
 
-    --popover: 206 100% 10%;
-    --popover-foreground: 216 100% 95%;
+    --popover: 215 25% 11%;
+    --popover-foreground: 213 20% 90%;
 
-    --primary: 201 100% 50%;
+    --primary: 202 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 205 100% 13%;
-    --secondary-foreground: 215 100% 86%;
+    --secondary: 215 20% 16%;
+    --secondary-foreground: 213 20% 85%;
 
     --muted: 205 100% 13%;
     --muted-foreground: 213 100% 81%;
