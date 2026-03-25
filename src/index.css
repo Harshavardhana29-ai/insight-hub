@@ -113,12 +113,12 @@
     --sidebar-foreground: 213 10% 55%;
     --sidebar-primary: 201 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 204 100% 16%;
-    --sidebar-accent-foreground: 216 100% 95%;
-    --sidebar-border: 205 100% 13%;
-    --sidebar-ring: 201 100% 50%;
+    --sidebar-accent: 215 25% 14%;
+    --sidebar-accent-foreground: 213 20% 90%;
+    --sidebar-border: 215 20% 15%;
+    --sidebar-ring: 202 100% 50%;
 
-    --success: 201 100% 50%;
+    --success: 202 100% 50%;
     --success-foreground: 208 100% 7%;
     --warning: 211 100% 75%;
     --warning-foreground: 208 100% 7%;
