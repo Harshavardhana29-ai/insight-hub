@@ -706,50 +706,6 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
         </div>
       )}
 
-      {/* Full Report Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              {displayTitle}
-            </DialogTitle>
-          </DialogHeader>
-          {displayReport && (
-            <div className="mt-2">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
-                <Button
-                  onClick={() => handleDownload("pdf", displayReport, displayTitle)}
-                  size="sm"
-                  className="gap-1.5 gradient-blue text-primary-foreground border-0"
-                >
-                  <Download className="w-3.5 h-3.5" /> PDF
-                </Button>
-                <Button
-                  onClick={() => handleDownload("docx", displayReport, displayTitle)}
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5" /> Word
-                </Button>
-              </div>
-              <div className="prose prose-sm dark:prose-invert max-w-none
-                prose-headings:text-foreground prose-h1:text-xl prose-h1:font-bold prose-h1:border-b prose-h1:border-border prose-h1:pb-2 prose-h1:mb-4
-                prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-h2:text-primary
-                prose-p:text-foreground prose-p:leading-relaxed
-                prose-strong:text-foreground prose-strong:font-bold
-                prose-li:text-foreground prose-li:marker:text-muted-foreground
-                prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground prose-blockquote:italic
-              ">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {displayReport}
-                </ReactMarkdown>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
