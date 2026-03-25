@@ -490,52 +490,48 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
               </motion.div>
             )}
 
-            {/* Running state */}
+            {/* Running state - collapsible thinking */}
             {status === "running" && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-start"
               >
-                <div className="max-w-[85%] bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Processing your request…</span>
-                  </div>
-
-                  {/* Progress */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Progress</span>
-                      <span className="font-mono">{progress}%</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full gradient-blue"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Logs */}
-                  <div
-                    ref={logRef}
-                    className="bg-muted/50 rounded-lg p-2 max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]"
-                  >
-                    {logs.map((log, i) => (
-                      <div key={i} className="flex items-start gap-1.5">
-                        {logTypeIcon(log.type)}
-                        <span className="text-muted-foreground shrink-0">[{log.time}]</span>
-                        <span className="text-foreground">{log.message}</span>
+                <div className="max-w-[85%]">
+                  <Collapsible open={thinkingOpen} onOpenChange={setThinkingOpen}>
+                    <CollapsibleTrigger className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                      <span className="text-sm font-medium text-foreground">Thinking…</span>
+                      <span className="text-xs text-muted-foreground font-mono">{progress}%</span>
+                      <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${thinkingOpen ? 'rotate-90' : ''}`} />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-3 mt-1 space-y-2 border-l-2 border-primary/20 pl-3">
+                        {/* Progress bar */}
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden w-48">
+                          <motion.div
+                            className="h-full rounded-full gradient-blue"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                        {/* Logs */}
+                        <div
+                          ref={logRef}
+                          className="max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]"
+                        >
+                          {logs.map((log, i) => (
+                            <div key={i} className="flex items-start gap-1.5">
+                              {logTypeIcon(log.type)}
+                              <span className="text-muted-foreground shrink-0">[{log.time}]</span>
+                              <span className="text-foreground">{log.message}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Processing…</span>
-                    </div>
-                  </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </motion.div>
             )}
