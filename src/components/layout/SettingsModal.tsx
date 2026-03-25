@@ -23,7 +23,7 @@ export function SettingsModal({ page, onClose }: SettingsModalProps) {
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] w-[1100px] h-[90vh] md:h-[85vh] p-0 overflow-hidden rounded-xl flex flex-col">
+      <DialogContent aria-describedby={undefined} className="max-w-[95vw] w-[1100px] h-[90vh] md:h-[85vh] p-0 overflow-hidden rounded-xl flex flex-col">
         <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-border bg-card shrink-0">
           <button
             onClick={onClose}
