@@ -663,7 +663,7 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Describe your research query…"
+                placeholder="What do you want to know today?"
                 disabled={status === "running"}
                 rows={1}
                 className="flex-1 bg-transparent border-0 outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground py-1.5 min-h-[36px] max-h-32"
