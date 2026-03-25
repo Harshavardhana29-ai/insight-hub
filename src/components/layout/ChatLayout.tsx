@@ -3,39 +3,47 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Settings, ChevronDown, User, LogOut,
   PanelLeftClose, PanelLeft, FileText, Clock, Plus,
+  Database, GitBranch, Calendar,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SettingsModal } from "./SettingsModal";
 
-// History items from scheduler static data
 const historyItems = [
   { id: "h1", title: "Daily AI Briefing", date: "Mar 24, 2026", workflow: "AI News Digest", status: "Completed" },
   { id: "h2", title: "Daily AI Briefing", date: "Mar 23, 2026", workflow: "AI News Digest", status: "Completed" },
   { id: "h4", title: "Weekly Market Report", date: "Mar 11, 2024", workflow: "Market Trend Analysis", status: "Completed" },
 ];
 
+const settingsItems = [
+  { id: "knowledge", label: "Knowledge Base", icon: Database },
+  { id: "workflows", label: "Workflows", icon: GitBranch },
+  { id: "scheduler", label: "Scheduler", icon: Calendar },
+];
+
 interface ChatLayoutProps {
   children: React.ReactNode;
-  onOpenSettings: () => void;
   onSelectHistory: (id: string) => void;
   selectedHistoryId: string | null;
   onNewChat: () => void;
 }
 
-export function ChatLayout({ children, onOpenSettings, onSelectHistory, selectedHistoryId, onNewChat }: ChatLayoutProps) {
+export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNewChat }: ChatLayoutProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [settingsPopupOpen, setSettingsPopupOpen] = useState(false);
+  const [activeSettingsPage, setActiveSettingsPage] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // Close sidebar on mobile by default
   useEffect(() => {
     const checkMobile = () => {
       if (window.innerWidth < 768) setSidebarOpen(false);
@@ -44,6 +52,11 @@ export function ChatLayout({ children, onOpenSettings, onSelectHistory, selected
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  const openSettingsPage = (id: string) => {
+    setActiveSettingsPage(id);
+    setSettingsPopupOpen(false);
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -189,13 +202,35 @@ export function ChatLayout({ children, onOpenSettings, onSelectHistory, selected
             >
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <button
-              onClick={onOpenSettings}
-              className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+
+            {/* Settings Popup */}
+            <Popover open={settingsPopupOpen} onOpenChange={setSettingsPopupOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  title="Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" sideOffset={8} className="w-52 p-1.5 rounded-xl">
+                <p className="px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Configuration
+                </p>
+                <div className="space-y-0.5">
+                  {settingsItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => openSettingsPage(item.id)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                    >
+                      <item.icon className="w-4 h-4 text-primary" />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </header>
 
@@ -204,6 +239,9 @@ export function ChatLayout({ children, onOpenSettings, onSelectHistory, selected
           {children}
         </main>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal page={activeSettingsPage} onClose={() => setActiveSettingsPage(null)} />
     </div>
   );
 }

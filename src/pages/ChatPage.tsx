@@ -412,9 +412,9 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
 
   const logTypeIcon = (type: LogEntry["type"]) => {
     switch (type) {
-      case "success": return <CheckCircle2 className="w-3 h-3 text-bosch-green shrink-0" />;
+      case "success": return <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />;
       case "error": return <AlertTriangle className="w-3 h-3 text-destructive shrink-0" />;
-      case "warning": return <AlertTriangle className="w-3 h-3 text-bosch-yellow shrink-0" />;
+      case "warning": return <AlertTriangle className="w-3 h-3 text-warning shrink-0" />;
       default: return <Clock className="w-3 h-3 text-primary shrink-0" />;
     }
   };

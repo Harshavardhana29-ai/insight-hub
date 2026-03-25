@@ -17,10 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 import type { WorkflowResponse, AgentResponse } from "@/lib/api";
 
 const topicGradient: Record<string, string> = {
-  AI: "gradient-purple",
+  AI: "gradient-blue",
   Technology: "gradient-blue",
-  Finance: "gradient-turquoise",
-  Sports: "gradient-green",
+  Finance: "gradient-blue-dark",
+  Sports: "gradient-blue",
   General: "gradient-blue",
 };
 
@@ -310,7 +310,7 @@ export default function WorkflowPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-sm">
               <GitBranch className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
@@ -333,7 +333,7 @@ export default function WorkflowPage() {
         <div className="grid grid-cols-2 gap-4">
           {[
             { label: "Total", value: statsData?.total ?? workflows.length, icon: Workflow, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
-            { label: "Agents Used", value: statsData?.agents_used ?? 0, icon: Bot, color: "border-l-bosch-turquoise", iconBg: "bg-bosch-turquoise/10 text-bosch-turquoise" },
+            { label: "Agents Used", value: statsData?.agents_used ?? 0, icon: Bot, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -422,7 +422,7 @@ export default function WorkflowPage() {
                           {ds.title}
                         </span>
                       )) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-turquoise/10 rounded-lg text-xs font-medium text-bosch-turquoise">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 rounded-lg text-xs font-medium text-primary">
                           <Zap className="w-3 h-3" />
                           Prompt Only
                         </span>
@@ -433,7 +433,7 @@ export default function WorkflowPage() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Agents</p>
                     <div className="flex flex-wrap gap-1.5">
                       {workflow.agents.map((agent) => (
-                        <span key={agent.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-bosch-purple/10 rounded-lg text-xs font-medium text-bosch-purple">
+                        <span key={agent.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 rounded-lg text-xs font-medium text-primary">
                           <Bot className="w-3 h-3" />
                           {agent.name}
                         </span>
@@ -455,7 +455,7 @@ export default function WorkflowPage() {
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {isEdit && <Edit className="w-5 h-5 text-bosch-turquoise" />}
+              {isEdit && <Edit className="w-5 h-5 text-primary" />}
               {isEdit ? "Edit Workflow" : "Create Workflow"}
             </DialogTitle>
           </DialogHeader>
@@ -485,7 +485,7 @@ export default function WorkflowPage() {
                     onClick={() => setSourceSelectionMode(mode.key)}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                       sourceSelectionMode === mode.key
-                        ? (isEdit ? "gradient-turquoise" : "gradient-blue") + " text-primary-foreground shadow-sm"
+                        ? (isEdit ? "gradient-blue-dark" : "gradient-blue") + " text-primary-foreground shadow-sm"
                         : "bg-card border border-border text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -495,7 +495,7 @@ export default function WorkflowPage() {
               </div>
 
               {sourceSelectionMode === "prompt_only" && (
-                <div className="px-3 py-2 rounded-lg bg-bosch-turquoise/5 border border-bosch-turquoise/20 mb-3">
+                <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 mb-3">
                   <p className="text-xs text-muted-foreground">💡 <strong>Prompt Only:</strong> No data sources or topics needed. Select agent(s) below and provide your prompt when running the workflow. The agent(s) will use their own knowledge to respond.</p>
                 </div>
               )}
@@ -507,13 +507,13 @@ export default function WorkflowPage() {
               )}
 
               {sourceSelectionMode === "both" && (
-                <div className="px-3 py-2 rounded-lg bg-bosch-purple/5 border border-bosch-purple/20 mb-3">
+                <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 mb-3">
                   <p className="text-xs text-muted-foreground">💡 <strong>Topic + Sources:</strong> Start by selecting topics, then optionally add individual data sources from any topic for more control.</p>
                 </div>
               )}
 
               {sourceSelectionMode === "individual" && (
-                <div className="px-3 py-2 rounded-lg bg-bosch-green/5 border border-bosch-green/20 mb-3">
+                <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 mb-3">
                   <p className="text-xs text-muted-foreground">💡 <strong>Individual Sources:</strong> Hand-pick specific data sources from any topic. Agents matching the selected sources' topics will become available.</p>
                 </div>
               )}
@@ -609,8 +609,8 @@ export default function WorkflowPage() {
                     onClick={() => toggleAgent(agent.name, agent.id)}
                     className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all border ${
                       selectedAgents.includes(agent.name)
-                        ? "gradient-purple text-primary-foreground border-transparent shadow-sm"
-                        : "bg-card text-foreground border-border hover:border-bosch-purple/40 hover:bg-bosch-purple/5"
+                        ? "gradient-blue text-primary-foreground border-transparent shadow-sm"
+                        : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
                     }`}
                   >
                     <Bot className="w-3.5 h-3.5" />
@@ -638,7 +638,7 @@ export default function WorkflowPage() {
             <button
               onClick={handleSave}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className={`px-5 py-2.5 text-sm rounded-md ${isEdit ? "gradient-turquoise" : "gradient-blue"} text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored disabled:opacity-50`}
+              className={`px-5 py-2.5 text-sm rounded-md ${isEdit ? "gradient-blue-dark" : "gradient-blue"} text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored disabled:opacity-50`}
             >
               {isEdit ? "Update Workflow" : "Create Workflow"}
             </button>
