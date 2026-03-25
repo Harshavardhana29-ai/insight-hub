@@ -32,6 +32,7 @@ const App = () => {
           onNewChat={handleNewChat}
         >
           <ChatPage
+            key={chatKey}
             selectedHistoryId={selectedHistoryId}
             onClearHistory={handleClearHistory}
           />
