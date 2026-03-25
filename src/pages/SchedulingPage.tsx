@@ -94,10 +94,10 @@ const mockHistory: Record<string, HistoryEntry[]> = {
 };
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-bosch-green text-primary-foreground" },
-  running: { label: "Running", className: "bg-bosch-yellow text-foreground" },
+  active: { label: "Active", className: "bg-primary text-primary-foreground" },
+  running: { label: "Running", className: "bg-warning text-foreground" },
   failed: { label: "Failed", className: "bg-destructive text-primary-foreground" },
-  paused: { label: "Paused", className: "bg-bosch-gray text-primary-foreground" },
+  paused: { label: "Paused", className: "bg-muted-foreground text-primary-foreground" },
 };
 
 const statusFilters: JobStatus[] = ["active", "running", "failed", "paused"];
@@ -240,7 +240,7 @@ export default function SchedulingPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Schedules
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-turquoise flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl gradient-blue-dark flex items-center justify-center shadow-sm">
               <History className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
@@ -381,10 +381,10 @@ export default function SchedulingPage() {
         {/* Status Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Active", value: counts.active, icon: Activity, color: "border-l-bosch-green", iconBg: "bg-bosch-green/10 text-bosch-green" },
+            { label: "Active", value: counts.active, icon: Activity, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
             { label: "Running", value: counts.running, icon: Play, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
             { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
-            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
+            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-muted-foreground", iconBg: "bg-muted-foreground/10 text-muted-foreground" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }} whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}>
               <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm transition-all`}>
@@ -465,7 +465,7 @@ export default function SchedulingPage() {
                         <button onClick={() => setEditJob(job)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-bosch-green hover:bg-bosch-green/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
+                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
                           {job.enabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                         </button>
                         <button onClick={() => setHistoryJobId(job.id)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="History">
@@ -574,7 +574,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
       <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-bosch-turquoise" : "gradient-blue")}>
+          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-primary" : "gradient-blue")}>
             {isEdit ? <Edit className="w-5 h-5 text-primary-foreground" /> : <Timer className="w-5 h-5 text-primary-foreground" />}
           </div>
           <div>
@@ -592,7 +592,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 i === step ? "gradient-blue text-primary-foreground shadow-colored" :
-                i < step ? "bg-bosch-green/10 text-bosch-green" :
+                i < step ? "bg-primary/10 text-primary" :
                 "bg-muted text-muted-foreground"
               )}
             >
@@ -643,8 +643,8 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
             {step === 1 && (
               <>
                 {form.scheduleType === "recurring" && cronValidation.valid && (
-                  <div className="rounded-xl border-2 border-bosch-turquoise/30 bg-bosch-turquoise/5 p-4">
-                    <p className="text-sm font-semibold text-bosch-turquoise">{cronToHuman(form.cronExpression)}</p>
+                  <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+                    <p className="text-sm font-semibold text-primary">{cronToHuman(form.cronExpression)}</p>
                     <p className="text-xs text-muted-foreground mt-1 font-mono">{form.cronExpression} • {form.timezone}</p>
                   </div>
                 )}
@@ -955,7 +955,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
                   </div>
                 </div>
                 {form.userPrompt && (
-                  <div className="p-4 rounded-md bg-bosch-purple/5 border border-bosch-purple/20">
+                  <div className="p-4 rounded-md bg-primary/5 border border-primary/20">
                     <h4 className="text-sm font-bold text-foreground mb-1">User Prompt</h4>
                     <p className="text-sm text-muted-foreground">{form.userPrompt}</p>
                   </div>
@@ -975,7 +975,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
+            <Button onClick={() => onSave(form)} className="gradient-blue text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
               <Check className="w-4 h-4 mr-1" /> {isEdit ? "Update Job" : "Save Job"}
             </Button>
           )}

@@ -43,7 +43,7 @@ export default function KnowledgeBasePage() {
 
   const statCards = [
     { label: "Total Sources", value: String(statsData?.total_sources ?? 0), change: `${sourcesData?.total ?? 0} shown`, icon: Database, gradient: "gradient-blue" },
-    { label: "Topics", value: String(statsData?.topic_count ?? 0), change: "Covered", icon: Tag, gradient: "gradient-turquoise" },
+    { label: "Topics", value: String(statsData?.topic_count ?? 0), change: "Covered", icon: Tag, gradient: "gradient-blue-dark" },
   ];
 
   return (
@@ -91,12 +91,12 @@ export default function KnowledgeBasePage() {
               transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }}
               whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}
               className={`bg-card border border-border rounded-md p-4 transition-all border-l-4 ${
-                stat.gradient === "gradient-blue" ? "border-l-primary" : "border-l-bosch-turquoise"
+                stat.gradient === "gradient-blue" ? "border-l-primary" : "border-l-primary"
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-md ${
-                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" : "bg-bosch-turquoise/10 text-bosch-turquoise"
+                  stat.gradient === "gradient-blue" ? "bg-primary/10 text-primary" : "bg-primary/10 text-primary"
                 } flex items-center justify-center shrink-0`}>
                   <stat.icon className="w-4 h-4" />
                 </div>
