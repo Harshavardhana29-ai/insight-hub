@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<string, { dot: string; text: string; bg: string }> = {
-  active: { dot: "bg-success", text: "text-success", bg: "bg-success/10" },
-  processing: { dot: "bg-warning animate-pulse-dot", text: "text-warning", bg: "bg-warning/10" },
+  active: { dot: "bg-primary", text: "text-primary", bg: "bg-primary/10" },
+  processing: { dot: "bg-primary/70 animate-pulse-dot", text: "text-primary", bg: "bg-primary/10" },
   error: { dot: "bg-destructive", text: "text-destructive", bg: "bg-destructive/10" },
   inactive: { dot: "bg-muted-foreground", text: "text-muted-foreground", bg: "bg-muted" },
-  completed: { dot: "bg-success", text: "text-success", bg: "bg-success/10" },
-  scheduled: { dot: "bg-info", text: "text-info", bg: "bg-info/10" },
-  paused: { dot: "bg-warning", text: "text-warning", bg: "bg-warning/10" },
+  completed: { dot: "bg-primary", text: "text-primary", bg: "bg-primary/10" },
+  scheduled: { dot: "bg-primary/70", text: "text-primary", bg: "bg-primary/10" },
+  paused: { dot: "bg-muted-foreground", text: "text-muted-foreground", bg: "bg-muted" },
 };
 
 interface StatusIndicatorProps {

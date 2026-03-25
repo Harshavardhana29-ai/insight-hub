@@ -80,15 +80,6 @@ export default {
           technology: "hsl(var(--topic-technology))",
           general: "hsl(var(--topic-general))",
         },
-        bosch: {
-          blue: "hsl(var(--bosch-blue))",
-          purple: "hsl(var(--bosch-purple))",
-          turquoise: "hsl(var(--bosch-turquoise))",
-          green: "hsl(var(--bosch-green))",
-          gray: "hsl(var(--bosch-gray))",
-          red: "hsl(var(--bosch-red))",
-          yellow: "hsl(var(--bosch-yellow))",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
