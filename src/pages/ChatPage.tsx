@@ -446,7 +446,7 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                 Market Research Assistant
               </h1>
               <p className="text-muted-foreground text-sm md:text-base mb-8">
-                Select a workflow and describe your research query to get started.
+                What do you want to know today?
               </p>
 
               {/* Quick suggestions */}
@@ -502,7 +502,6 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                     <CollapsibleTrigger className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                       <span className="text-sm font-medium text-foreground">Thinking…</span>
-                      <span className="text-xs text-muted-foreground font-mono">{progress}%</span>
                       <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${thinkingOpen ? 'rotate-90' : ''}`} />
                     </CollapsibleTrigger>
                     <CollapsibleContent>

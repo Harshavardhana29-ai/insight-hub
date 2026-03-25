@@ -82,7 +82,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {statCards.map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -117,21 +117,21 @@ export default function KnowledgeBasePage() {
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Topic</th>
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Tags</th>
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Uploaded</th>
-                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Status</th>
+                  
                   <th className="text-right text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
-                    </td>
-                  </tr>
-                ) : sources.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
+                     <td colSpan={6} className="px-5 py-12 text-center">
+                       <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                       <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
+                     </td>
+                   </tr>
+                 ) : sources.length === 0 ? (
+                   <tr>
+                     <td colSpan={6} className="px-5 py-12 text-center">
                       <Database className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">No data sources found</p>
                     </td>
@@ -174,9 +174,6 @@ export default function KnowledgeBasePage() {
                         <Clock className="w-3 h-3" />
                         {source.created_at ? new Date(source.created_at).toLocaleDateString() : "—"}
                       </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <StatusIndicator status={source.status} />
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button

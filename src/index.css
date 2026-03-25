@@ -37,7 +37,7 @@
     --radius: 0.75rem;
 
     --sidebar-background: 213 30% 99%;
-    --sidebar-foreground: 213 10% 46%;
+    --sidebar-foreground: 213 20% 30%;
     --sidebar-primary: 202 100% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 213 60% 96%;
@@ -110,7 +110,7 @@
     --ring: 202 100% 50%;
 
     --sidebar-background: 215 30% 9%;
-    --sidebar-foreground: 213 10% 55%;
+    --sidebar-foreground: 213 15% 70%;
     --sidebar-primary: 201 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 25% 14%;
