@@ -116,6 +116,9 @@ importers:
       framer-motion:
         specifier: ^12.35.2
         version: 12.36.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -242,7 +245,7 @@ importers:
         version: 5.4.21(@types/node@22.19.15)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@22.19.15)(jsdom@20.0.3)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jsdom@20.0.3)
 
 packages:
 
@@ -4736,8 +4739,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base64-arraybuffer@1.0.2:
-    optional: true
+  base64-arraybuffer@1.0.2: {}
 
   baseline-browser-mapping@2.10.8: {}
 
@@ -4872,7 +4874,6 @@ snapshots:
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   css.escape@1.5.1: {}
 
@@ -5365,7 +5366,6 @@ snapshots:
     dependencies:
       css-line-break: 2.1.0
       text-segmentation: 1.0.3
-    optional: true
 
   http-proxy-agent@5.0.0:
     dependencies:
@@ -6438,7 +6438,6 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   thenify-all@1.6.0:
     dependencies:
@@ -6585,7 +6584,6 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
-    optional: true
 
   vaul@0.9.9(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -6655,7 +6653,7 @@ snapshots:
       '@types/node': 22.19.15
       fsevents: 2.3.3
 
-  vitest@3.2.4(@types/node@22.19.15)(jsdom@20.0.3):
+  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jsdom@20.0.3):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
@@ -6681,6 +6679,7 @@ snapshots:
       vite-node: 3.2.4(@types/node@22.19.15)
       why-is-node-running: 2.3.0
     optionalDependencies:
+      '@types/debug': 4.1.12
       '@types/node': 22.19.15
       jsdom: 20.0.3
     transitivePeerDependencies:

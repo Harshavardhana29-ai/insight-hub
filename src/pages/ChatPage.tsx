@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import { generatePdfReport, generateWordReport } from "@/lib/pdf-export";
 
 // ─── Scheduler mock history (static) ─────────────────────────────
 const mockHistoryReports: Record<string, { title: string; date: string; workflow: string; report: string }> = {
@@ -45,78 +46,10 @@ interface LogEntry {
   type: "info" | "success" | "error" | "warning";
 }
 
-// HTML renderer for Word export
-function renderHtmlForExport(md: string): string {
-  const normalized = md.replace(/^(\s*)\*(\s+)/gm, '$1-$2');
-  return normalized
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`{3}([\s\S]*?)`{3}/g, '<pre><code>$1</code></pre>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    .replace(/(?<!")(https?:\/\/[^\s<)"]+)/g, '<a href="$1">$1</a>')
-    .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
-    .replace(/^\| (.+) \|$/gm, (match) => {
-      const cells = match.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
-      return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
-    })
-    .replace(/^\|[-:|\s]+\|$/gm, '')
-    .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
-      const rows = match.trim().split('\n').filter(r => r.trim());
-      if (rows.length > 0) {
-        const header = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
-        const body = rows.slice(1).join('\n');
-        return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
-      }
-      return match;
-    })
-    .replace(/^(\s*)- (.+)$/gm, (_, indent, content) => {
-      const level = Math.floor((indent || '').length / 4);
-      return `<li${level > 0 ? ` style="margin-left:${level * 20}px"` : ''}>${content}</li>`;
-    })
-    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
-    .replace(/\n{2,}/g, '</p><p>')
-    .replace(/\n/g, '<br/>')
-    .replace(/^(?!<[huptblo])/gm, '');
-}
+// renderHtmlForExport, stripMarkdown, formatTimestamp, loadImageAsDataUrl
+// are now imported from @/lib/pdf-export
 
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "$1")
-    .replace(/\*(.+?)\*/g, "$1")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/`(.+?)`/g, "$1");
-}
 
-function formatTimestamp(): string {
-  const now = new Date();
-  return now.toLocaleDateString("en-US", {
-    year: "numeric", month: "long", day: "numeric",
-  }) + " at " + now.toLocaleTimeString("en-US", {
-    hour: "2-digit", minute: "2-digit", hour12: true,
-  });
-}
-
-async function loadImageAsDataUrl(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -248,166 +181,26 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
   };
 
   const handleDownload = async (format: "pdf" | "docx", reportText: string, title: string) => {
-    const html = renderHtmlForExport(reportText);
-    const timestamp = formatTimestamp();
     const agentNames = selectedWorkflow?.agents.map(a => a.name).join(", ") || "Research Agent";
+    const exportOpts = {
+      reportMarkdown: reportText,
+      title,
+      agentNames,
+      topic: selectedWorkflow?.topic,
+      dataSources: selectedWorkflow?.data_sources?.map(ds => ds.title),
+    };
 
-    if (format === "pdf") {
-      try {
-        const { default: jsPDF } = await import("jspdf");
-        const { default: autoTable } = await import("jspdf-autotable");
-        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 20;
-        const contentWidth = pageWidth - margin * 2;
-
-        let logoDataUrl: string | null = null;
-        try { logoDataUrl = await loadImageAsDataUrl("/bosch-alt.png"); } catch {}
-
-        pdf.setFillColor(0, 123, 192);
-        pdf.rect(0, 0, pageWidth, 3, "F");
-        if (logoDataUrl) pdf.addImage(logoDataUrl, "PNG", pageWidth / 2 - 15, 12, 30, 30);
-
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(24);
-        pdf.setTextColor(0, 123, 192);
-        const titleLines = pdf.splitTextToSize(title, contentWidth);
-        const titleY = logoDataUrl ? 55 : 50;
-        titleLines.forEach((line: string, i: number) => {
-          pdf.text(line, pageWidth / 2, titleY + i * 10, { align: "center" });
-        });
-
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(11);
-        pdf.setTextColor(100);
-        pdf.text(`Generated on ${timestamp}`, pageWidth / 2, titleY + titleLines.length * 10 + 10, { align: "center" });
-
-        pdf.addPage();
-        let cursorY = 15;
-        const mdLines = reportText.split("\n");
-        let i = 0;
-
-        const ensureSpace = (needed: number) => {
-          if (cursorY + needed > pageHeight - 20) { pdf.addPage(); cursorY = 15; }
-        };
-
-        while (i < mdLines.length) {
-          const line = mdLines[i];
-          if (line.startsWith("# ") && i < 3) { i++; continue; }
-          if (line.trim() === "---") { ensureSpace(8); cursorY += 8; i++; continue; }
-
-          if (line.startsWith("|") && i + 1 < mdLines.length && mdLines[i + 1]?.match(/^\|[-:|\s]+\|$/)) {
-            const tableLines: string[] = [];
-            while (i < mdLines.length && mdLines[i].startsWith("|")) {
-              if (!mdLines[i].match(/^\|[-:|\s]+\|$/)) tableLines.push(mdLines[i]);
-              i++;
-            }
-            if (tableLines.length > 0) {
-              const parseRow = (row: string) => row.replace(/^\||\|$/g, "").split("|").map(c => stripMarkdown(c.trim()));
-              ensureSpace(20);
-              autoTable(pdf, {
-                startY: cursorY,
-                head: [parseRow(tableLines[0])],
-                body: tableLines.slice(1).map(parseRow),
-                margin: { left: margin, right: margin },
-                styles: { fontSize: 8, cellPadding: 3 },
-                headStyles: { fillColor: [0, 123, 192], textColor: 255, fontStyle: "bold" },
-                alternateRowStyles: { fillColor: [245, 248, 252] },
-                theme: "grid",
-              });
-              cursorY = (pdf as any).lastAutoTable.finalY + 8;
-            }
-            continue;
-          }
-
-          if (line.startsWith("## ")) {
-            ensureSpace(14);
-            cursorY += 4;
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(13); pdf.setTextColor(0, 123, 192);
-            const hLines = pdf.splitTextToSize(stripMarkdown(line.replace(/^## /, "")), contentWidth);
-            hLines.forEach((hl: string) => { ensureSpace(7); pdf.text(hl, margin, cursorY); cursorY += 7; });
-            cursorY += 6;
-            i++; continue;
-          }
-          if (line.startsWith("### ")) {
-            ensureSpace(12);
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(80);
-            const hLines = pdf.splitTextToSize(stripMarkdown(line.replace(/^### /, "")), contentWidth);
-            hLines.forEach((hl: string) => { ensureSpace(6); pdf.text(hl, margin, cursorY); cursorY += 6; });
-            cursorY += 2;
-            i++; continue;
-          }
-
-          const bulletMatch = line.match(/^(\s*)[*-]\s+(.*)/);
-          if (bulletMatch) {
-            const level = Math.floor((bulletMatch[1] || "").length / 4);
-            const bulletText = stripMarkdown(bulletMatch[2]);
-            const indentPx = level * 5;
-            const bLines = pdf.splitTextToSize(bulletText, contentWidth - 8 - indentPx);
-            ensureSpace(bLines.length * 5 + 2);
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(60);
-            pdf.text(level > 0 ? "◦" : "•", margin + 1 + indentPx, cursorY);
-            bLines.forEach((bl: string, bi: number) => { pdf.text(bl, margin + 6 + indentPx, cursorY + bi * 5); });
-            cursorY += bLines.length * 5 + 1;
-            i++; continue;
-          }
-
-          if (line.trim() === "") { cursorY += 3; i++; continue; }
-
-          const plainText = stripMarkdown(line);
-          if (plainText.trim()) {
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(60);
-            const pLines = pdf.splitTextToSize(plainText, contentWidth);
-            pLines.forEach((pl: string) => { ensureSpace(5); pdf.text(pl, margin, cursorY); cursorY += 5; });
-            cursorY += 2;
-          }
-          i++;
-        }
-
-        const totalPages = pdf.getNumberOfPages();
-        for (let p = 1; p <= totalPages; p++) {
-          pdf.setPage(p);
-          pdf.setFontSize(7); pdf.setTextColor(150);
-          pdf.text(`Powered by: BGSW/BDO`, pageWidth - margin, pageHeight - 12, { align: "right" });
-          pdf.text(`Page ${p} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" });
-        }
-
-        pdf.save(`${title.replace(/[^a-zA-Z0-9]/g, "_")}_report.pdf`);
+    try {
+      if (format === "pdf") {
+        await generatePdfReport(exportOpts);
         toast({ title: "PDF downloaded successfully" });
-      } catch (e) {
-        console.error("PDF generation error:", e);
-        toast({ title: "Failed to generate PDF", variant: "destructive" });
+      } else {
+        await generateWordReport(exportOpts);
+        toast({ title: "Word document downloaded" });
       }
-    } else {
-      let logoDataUrlWord: string | null = null;
-      try { logoDataUrlWord = await loadImageAsDataUrl("/bosch-alt.png"); } catch {}
-      const timestamp = formatTimestamp();
-
-      const docContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="utf-8">
-        <style>
-          @page { margin: 2.5cm; }
-          body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #333; line-height: 1.6; }
-          h1 { font-size: 22pt; color: #007bc0; text-align: center; }
-          h2 { font-size: 16pt; color: #007bc0; border-bottom: 1px solid #007bc0; padding-bottom: 4px; }
-          h3 { font-size: 13pt; color: #444; }
-          table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-          th, td { border: 1px solid #bbb; padding: 8px 10px; text-align: left; font-size: 10pt; }
-          th { background: #007bc0; color: #fff; font-weight: bold; }
-          a { color: #007bc0; }
-        </style></head>
-        <body>
-          ${logoDataUrlWord ? `<p style="text-align:center;"><img src="${logoDataUrlWord}" width="100" height="100" /></p>` : ''}
-          <h1>${title}</h1>
-          <p style="text-align:center;font-size:10pt;color:#888;">Generated on ${timestamp}</p>
-          <hr style="border:none;border-top:2px solid #007bc0;margin:30px 60px;"/>
-          ${html.replace(/^<h1>.*?<\/h1>/i, '')}
-        </body></html>`;
-      const blob = new Blob([docContent], { type: "application/msword" });
-      const { saveAs } = await import("file-saver");
-      saveAs(blob, `${title.replace(/[^a-zA-Z0-9]/g, "_")}_report.doc`);
-      toast({ title: "Word document downloaded" });
+    } catch (e) {
+      console.error("Export error:", e);
+      toast({ title: `Failed to generate ${format === "pdf" ? "PDF" : "Word document"}`, variant: "destructive" });
     }
   };
 
