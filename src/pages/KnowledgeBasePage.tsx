@@ -158,7 +158,7 @@ export default function KnowledgeBasePage() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-sm text-muted-foreground">{source.type}</span>
+                      <span className="text-sm text-muted-foreground">{source.url ? "URL" : "File"}</span>
                     </td>
                     <td className="px-5 py-4">
                       <TopicBadge topic={source.topic} />
