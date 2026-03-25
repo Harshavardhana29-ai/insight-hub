@@ -132,7 +132,7 @@ export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNew
                       "w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 group",
                       selectedHistoryId === item.id
                         ? "bg-sidebar-accent text-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+                        : "text-foreground/70 hover:bg-sidebar-accent/60 hover:text-foreground"
                     )}
                   >
                     <div className="flex items-start gap-2.5">

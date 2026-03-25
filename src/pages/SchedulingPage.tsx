@@ -256,8 +256,8 @@ export default function SchedulingPage() {
           ) : (
             <div className="space-y-3">
               {historyEntries.map((entry, i) => (
-                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-5 hover:shadow-md transition-all">
-                  <div className="flex items-start justify-between mb-3">
+                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-4 md:p-5 hover:shadow-md transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={entry.status} />
                       <div>
@@ -265,7 +265,7 @@ export default function SchedulingPage() {
                         <p className="text-xs text-muted-foreground">Duration: {entry.duration}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button
                         onClick={() => setPreviewEntry(entry)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -278,7 +278,7 @@ export default function SchedulingPage() {
                     </div>
                   </div>
                   <p className="text-sm text-foreground mb-3">{entry.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> {entry.workflow}</span>
                     <span className="flex items-center gap-1"><Bot className="w-3 h-3" /> {entry.agents.join(", ")}</span>
                   </div>

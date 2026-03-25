@@ -175,9 +175,6 @@ export default function KnowledgeBasePage() {
                         {source.created_at ? new Date(source.created_at).toLocaleDateString() : "—"}
                       </div>
                     </td>
-                    <td className="px-5 py-4">
-                      <StatusIndicator status={source.status} />
-                    </td>
                     <td className="px-5 py-4 text-right">
                       <button
                         onClick={() => handleDelete(source.id)}
