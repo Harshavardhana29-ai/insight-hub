@@ -10,9 +10,11 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [chatKey, setChatKey] = useState(0);
 
   const handleNewChat = useCallback(() => {
     setSelectedHistoryId(null);
+    setChatKey(k => k + 1);
   }, []);
 
   const handleClearHistory = useCallback(() => {
@@ -30,6 +32,7 @@ const App = () => {
           onNewChat={handleNewChat}
         >
           <ChatPage
+            key={chatKey}
             selectedHistoryId={selectedHistoryId}
             onClearHistory={handleClearHistory}
           />
