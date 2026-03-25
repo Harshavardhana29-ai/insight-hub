@@ -95,8 +95,8 @@ const mockHistory: Record<string, HistoryEntry[]> = {
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   active: { label: "Active", className: "bg-primary text-primary-foreground" },
-  running: { label: "Running", className: "bg-warning text-foreground" },
-  failed: { label: "Failed", className: "bg-destructive text-primary-foreground" },
+  running: { label: "Running", className: "bg-primary/70 text-primary-foreground" },
+  failed: { label: "Failed", className: "bg-destructive text-destructive-foreground" },
   paused: { label: "Paused", className: "bg-muted-foreground text-primary-foreground" },
 };
 
