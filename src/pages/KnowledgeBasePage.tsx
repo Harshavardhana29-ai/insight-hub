@@ -124,14 +124,14 @@ export default function KnowledgeBasePage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
-                    </td>
-                  </tr>
-                ) : sources.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
+                     <td colSpan={6} className="px-5 py-12 text-center">
+                       <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                       <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
+                     </td>
+                   </tr>
+                 ) : sources.length === 0 ? (
+                   <tr>
+                     <td colSpan={6} className="px-5 py-12 text-center">
                       <Database className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">No data sources found</p>
                     </td>
