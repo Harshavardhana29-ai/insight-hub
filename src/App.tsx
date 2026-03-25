@@ -1,36 +1,46 @@
+import { useState, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
-import WorkflowPage from "@/pages/WorkflowPage";
-import SchedulingPage from "@/pages/SchedulingPage";
-import RunWorkflowPage from "@/pages/RunWorkflowPage";
-import NotFound from "@/pages/NotFound";
+import { ChatLayout } from "@/components/layout/ChatLayout";
+import { SettingsModal } from "@/components/layout/SettingsModal";
+import ChatPage from "@/pages/ChatPage";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <DashboardLayout>
-          <Routes>
-            <Route path="/" element={<Navigate to="/knowledge" replace />} />
-            <Route path="/knowledge" element={<KnowledgeBasePage />} />
-            <Route path="/workflows" element={<WorkflowPage />} />
-            <Route path="/run" element={<RunWorkflowPage />} />
-            <Route path="/scheduling" element={<SchedulingPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </DashboardLayout>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+
+  const handleNewChat = useCallback(() => {
+    setSelectedHistoryId(null);
+  }, []);
+
+  const handleClearHistory = useCallback(() => {
+    setSelectedHistoryId(null);
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <ChatLayout
+          onOpenSettings={() => setSettingsOpen(true)}
+          onSelectHistory={setSelectedHistoryId}
+          selectedHistoryId={selectedHistoryId}
+          onNewChat={handleNewChat}
+        >
+          <ChatPage
+            selectedHistoryId={selectedHistoryId}
+            onClearHistory={handleClearHistory}
+          />
+        </ChatLayout>
+        <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
