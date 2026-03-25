@@ -164,10 +164,11 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [report, setReport] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const workflowPickerRef = useRef<HTMLDivElement>(null);
+  const [thinkingOpen, setThinkingOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: workflowsData } = useWorkflows();
