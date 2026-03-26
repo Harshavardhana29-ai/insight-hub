@@ -11,6 +11,7 @@ import { useWorkflows } from "@/hooks/use-workflows";
 import { useRunWorkflow, useRunStatus, useRunLogs, useRunReport } from "@/hooks/use-runs";
 import { runsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -26,9 +27,9 @@ const mockHistoryReports: Record<string, { title: string; date: string; workflow
   },
   h4: {
     title: "Weekly Market Report",
-    date: "Mar 11, 2024",
+    date: "Mar 24, 2026",
     workflow: "Market Trend Analysis",
-    report: `# Market Trend Analysis — Week of March 11, 2024\n\n## Market Overview\n\nAnalyzed **12 market sectors** with data from Bloomberg Finance API.\n\n## Sector Performance\n\n| Sector | Weekly Change | Trend | Signal |\n|--------|:---:|:---:|:---:|\n| Technology | +2.4% | 📈 Bullish | Strong Buy |\n| Healthcare | +1.1% | 📈 Bullish | Hold |\n| Energy | -0.8% | 📉 Bearish | Watch |\n| Finance | +0.6% | ➡️ Neutral | Hold |\n| Consumer | +1.8% | 📈 Bullish | Buy |\n\n## Key Insights\n\n### Tech Sector Rally\nDriven by **strong earnings** from major cloud providers and continued AI investment.\n\n### Energy Decline\n- Oil prices dropped **3.2%** due to increased supply forecasts\n- Renewable energy stocks showed **resilience** (+0.4%)\n\n## Risk Factors\n\n1. **Interest rate uncertainty** — Fed meeting next week\n2. **Geopolitical tensions** — Potential supply chain disruptions\n3. **Earnings season** — Mixed signals from retail sector\n\n> *Next report scheduled: March 18, 2024*`,
+    report: `# Market Trend Analysis — Week of March 24, 2026\n\n## Market Overview\n\nAnalyzed **14 market sectors** with data synthesized from global financial news and market indicators (Bloomberg, Reuters, and IMF outlook updates).\n\n## Sector Performance\n\n| Sector | Weekly Change | Trend | Signal |\n|--------|:---:|:---:|:---:|\n| Technology | +3.1% | 📈 Bullish | Strong Buy |\n| Artificial Intelligence | +4.6% | 📈 Bullish | Strong Buy |\n| Energy (Oil & Gas) | +1.9% | 📈 Bullish | Buy |\n| Renewable Energy | +0.7% | ➡️ Neutral | Hold |\n| Healthcare | +0.9% | 📈 Bullish | Hold |\n| Finance | -0.4% | 📉 Bearish | Watch |\n| Consumer Goods | +1.5% | 📈 Bullish | Buy |\n| Industrials | +0.8% | ➡️ Neutral | Hold |\n| Real Estate | -1.2% | 📉 Bearish | Watch |\n| Telecommunications | +0.5% | ➡️ Neutral | Hold |\n| Materials | +0.3% | ➡️ Neutral | Hold |\n| Automotive (EV) | +2.2% | 📈 Bullish | Buy |\n| Semiconductors | +3.8% | 📈 Bullish | Strong Buy |\n| Crypto Market | +5.4% | 📈 Bullish | High Risk Buy |\n\n## Key Insights\n\n### AI & Semiconductor Surge\nDriven by **accelerated enterprise adoption of generative AI** and strong demand for advanced chips.\n- Major chipmakers reported **higher-than-expected guidance**\n- Data center expansion continues globally\n\n### Oil Market Rebound\n- Crude oil prices rose **~2% this week** amid supply tightening and OPEC+ production discipline\n- Geopolitical risks in key regions supported price stability\n\n### Tech Sector Strength\n- Continued momentum from **cloud computing and AI integration**\n- Large-cap tech firms led gains, especially in software and infrastructure\n\n### Real Estate Pressure\n- Rising bond yields weighed on property markets\n- Commercial real estate remains under stress in major economies\n\n## Risk Factors\n\n1. **Interest Rate Uncertainty** — Central banks signaling prolonged higher rates\n2. **Geopolitical Instability** — Ongoing tensions affecting oil supply routes\n3. **AI Regulation Risks** — Governments considering stricter AI governance frameworks\n4. **China Growth Concerns** — Slower industrial recovery impacting global demand\n\n## Outlook\n\n- AI, semiconductors, and tech expected to **outperform in near term**\n- Oil markets likely to remain **volatile but supported**\n- Defensive sectors may gain if macro uncertainty increases\n\n> *Next report scheduled: March 31, 2026*`,
   },
 };
 
@@ -109,8 +110,20 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
 
   const selectedWorkflow = workflowsList.find(w => w.id === selectedWorkflowId);
 
-  // Show history report
-  const historyReport = selectedHistoryId ? mockHistoryReports[selectedHistoryId] : null;
+  const { data: recentRuns = [] } = useRecentSchedulerRuns();
+
+  const historyReport = (() => {
+    if (!selectedHistoryId) return null;
+    if (mockHistoryReports[selectedHistoryId]) return mockHistoryReports[selectedHistoryId];
+    if (selectedHistoryId.startsWith("sched-")) {
+      const runId = selectedHistoryId.replace("sched-", "");
+      const run = recentRuns.find(r => r.id === runId);
+      if (run?.report_markdown) {
+        return { title: run.job_name, date: run.run_date, workflow: run.workflow, report: run.report_markdown };
+      }
+    }
+    return null;
+  })();
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -433,7 +446,7 @@ export default function ChatPage({ selectedHistoryId, onClearHistory }: ChatPage
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="What do you want to know today?"
+                placeholder="Ask anything..."
                 disabled={status === "running"}
                 rows={1}
                 className="flex-1 bg-transparent border-0 outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground py-1.5 min-h-[36px] max-h-32"

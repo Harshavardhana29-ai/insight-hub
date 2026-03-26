@@ -26,6 +26,9 @@ import type {
   CreateJobFormData, ScheduledJob, HistoryEntry, JobStatus,
   OutputDelivery, OutputFormat, WakeMode, ConcurrencyPolicy,
 } from "@/types/cron";
+import { useWorkflows } from "@/hooks/use-workflows";
+import { useScheduledJobs, useJobHistory, useCreateJob, useUpdateJob, useDeleteJob, useToggleJob, formToPayload } from "@/hooks/use-scheduler";
+import { useToast } from "@/hooks/use-toast";
 
 // Simple markdown to HTML renderer
 function renderMarkdown(md: string): string {
@@ -61,43 +64,16 @@ function renderMarkdown(md: string): string {
     ;
 }
 
-// ─── Mock Data ───────────────────────────────────────────────
 const MOCK_USER = {
   name: "Krishna Prakash",
   email: "krishna.prakash@bosch.com",
 };
 
-const mockWorkflows = [
-  { id: "1", title: "AI News Digest" },
-  { id: "2", title: "Market Trend Analysis" },
-  { id: "3", title: "Tech Industry Monitor" },
-];
-
-const initialJobs: ScheduledJob[] = [
-  { id: "1", jobName: "Daily AI Briefing", type: "Daily", workflowId: "1", workflowTitle: "AI News Digest", scheduleTime: "09:00", nextRun: "Tomorrow 09:00", lastRun: "Today 09:00", status: "active", notify: false, enabled: true, jobsDone: 47 },
-  { id: "2", jobName: "Weekly Market Report", type: "Weekly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "Mon 08:00", nextRun: "Mar 24", lastRun: "Mar 17", status: "active", notify: false, enabled: true, jobsDone: 12 },
-  { id: "3", jobName: "Monthly Finance", type: "Monthly", workflowId: "2", workflowTitle: "Market Trend Analysis", scheduleTime: "1st 10:00", nextRun: "Apr 1", lastRun: "Mar 1", status: "active", notify: false, enabled: true, jobsDone: 3 },
-  { id: "5", jobName: "Tech Trends Friday", type: "Weekly", workflowId: "3", workflowTitle: "Tech Industry Monitor", scheduleTime: "Fri 14:00", nextRun: "Mar 27", lastRun: "Mar 20", status: "active", notify: false, enabled: true, jobsDone: 8 },
-];
-
-const mockHistory: Record<string, HistoryEntry[]> = {
-  "1": [
-    { id: "h1", runDate: "2026-03-24 16:00", status: "Completed", duration: "2m 34s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 47 articles, generated sentiment report",
-      reportMarkdown: `# Daily AI Briefing: March 24, 2026\n\n## Executive Summary\n\n## Major AI Model and Hardware Launches\n\n- **OpenAI - GPT-5.4 (US, March 2026):** Most powerful and efficient model for professional work, with a context window of up to 1 million tokens.\n- **Google - Gemini 3.1 Flash-Lite (US, March 2026):** Faster and more cost-effective model for large-scale workloads.\n- **NVIDIA - Rubin Supercomputer Platform (US, March 2026):** Next-generation platform for massive AI workloads.\n- **Alibaba - New AI Chip Design (China, March 2026):** Announced to meet high AI compute demand.\n\n## Rise of AI Agents and Enterprise Adoption\n\n- **Global trend (2026):** Rapid development and adoption of AI agents as proactive assistants capable of complex tasks, pushing companies to build technical and organizational structures to manage them.\n- **HSBC (UK, March 2026):** Appointed its first Chief AI Officer, David Rice, signaling strategic focus on scaling generative AI in finance.\n\n## Industry-Specific AI Trends\n\n- **Global trend (2026):** Focus is shifting from general hype to responsible, economical, and repeatable value, including smaller domain-specific models.\n- **Healthcare (March 2026):** AI is accelerating drug discovery, but a translatability gap is slowing movement into clinical practice.\n- **Siemens AG (Germany, March 2026):** Industrial software business remains resilient due to high-precision requirements in sectors like automotive and pharmaceuticals.\n\n## AI Adoption on the Rise\n\n- **Canada (March 2026):** 91% of mid-market companies are satisfied with AI progress, but only 4% believe AI is delivering transformational strategic value.` },
-    { id: "h2", runDate: "2026-03-23 09:00", status: "Completed", duration: "2m 12s", workflow: "AI News Digest", agents: ["News Aggregator", "Sentiment Analyzer"], description: "Collected 52 articles, generated sentiment report",
-      reportMarkdown: `# Market Research\n\n\n\nHere is the strategic outlook for Bosch Global Software Technologies (BGSW):\n\n### **Executive Brief**\n\nBGSW's strategic imperative is to evolve its Indian GCC from a premier delivery center into a global innovation hub, capitalizing on the convergence of Agentic AI, Software-Defined Vehicles, and AI-driven cybersecurity to capture new revenue streams and drive Bosch's global growth.\n\n### **Leadership Impact Matrix**\n\n| Trend | Market Size/Growth (CAGR) | Impact on BGSW/Bosch | Source |\n| :--- | :--- | :--- | :--- |\n| **AI in Cybersecurity** | Global market to reach $93.75B by 2030. | New revenue stream from AI-powered security solutions for Bosch products and services. Potential to offer \"Security as a Service\". | McKinsey, BCG, Bain Analysis |\n| **AI Services & Agentic AI** | AI services market to reach $184.34B by 2029 (48.6% CAGR). | Shift from a service-provider to a \"Service as a Software\" model. Increased automation and efficiency in software development and business processes. | Deloitte, KPMG, PwC, a16z, MIT Sloan Analysis |\n| **Vehicle Personalization (SDVs)** | In-car technologies are now a primary consideration for car buyers. | Opportunity to lead in the development of software-defined vehicle platforms, creating new revenue from personalized services and features. | Accenture Strategy Analysis |\n| **India's Economic Growth & Software Play** | India is the 3rd largest startup ecosystem and a leading IT-BPM exporter. | BGSW's Indian GCC is perfectly positioned to become a global R&D and innovation hub, attracting top talent and driving product development. | World Bank, IMF, OECD Analysis |\n| **Future of Indian GCCs** | GCC market in India to reach $105B by 2030. | Opportunity for BGSW's Indian GCC to take on global leadership roles and end-to-end product ownership. | McKinsey, Bain Analysis |\n\n### **The \"So-What\" Analysis**\n\nThe confluence of rapid advancements in AI, particularly the shift towards agentic models, and the burgeoning software-defined vehicle market presents a pivotal moment for BGSW. This is not merely an incremental change but a fundamental rewiring of the technology landscape. The \"why\" is the market's demand for intelligent, personalized, and secure experiences, a demand that traditional business models cannot meet. The \"what\" is the opportunity for BGSW to leverage its deep engineering expertise to create new, high-margin revenue streams in AI-powered cybersecurity and personalized in-car experiences. The \"when\" is now, as the window to establish leadership in these nascent markets is closing. The \"so-what\" for BGSW is the urgent need to transition its Indian GCC from a cost-effective delivery center to a strategic innovation hub, empowered to lead global product development and business strategy. The \"what-if\" scenario of inaction is ceding ground to more agile, software-native competitors, relegating BGSW to a lower-margin, execution-only role in the future of mobility and technology. The challenge is not just technological; it is a necessary evolution of organizational structure, culture, and leadership to fully capitalize on this opportunity. The economic tailwinds in India, coupled with the strategic imperative for global enterprises to innovate from their GCCs, provide a unique and powerful launchpad for this transformation.\n\n### **Strategic Roadmap**\n\n#### **Key Findings:**\n\n*   **The AI Gold Rush is Here:** The market for AI services and AI-driven cybersecurity is expanding at an unprecedented rate. This is not a future trend; it is a current and actionable revenue opportunity.\n*   **The Car is a Computer:** The value proposition in the automotive industry is shifting from hardware to software. Vehicle personalization through software-defined platforms is the new competitive frontier.\n*   **India is the Innovation Engine:** BGSW's Indian GCC is its most critical asset in this new landscape. It has the talent, the ecosystem, and the potential to be the global leader for Bosch's software-led future.\n*   **Agentic AI is the Next Frontier:** The move from generative AI to agentic AI will unlock new business models, moving from selling tools to selling outcomes.\n*   **Diverse Economic Landscapes:** While India and Vietnam show robust growth, the more mature markets of Germany and Mexico are experiencing modest recoveries. Poland stands out with strong growth projections in the EU. This requires a nuanced regional strategy.\n\n#### **Action Plan:**\n\n*   **45-Day (Quick Wins/Pilots):**\n    *   Launch pilot projects within the Indian GCC focused on developing agentic AI solutions for internal process automation (e.g., code debugging, project management).\n    *   Initiate a \"Vehicle Personalization\" task force to prototype new in-car experiences and services on a simulated SDV platform.\n    *   Create a cross-functional team to develop a business case for an \"AI Cybersecurity\" offering, initially focused on securing Bosch's own products.\n\n*   **90-Day (Scaling/Process):**\n    *   Based on pilot results, scale successful agentic AI solutions across BGSW's global operations.\n    *   Formalize the \"AI Cybersecurity\" initiative, with a dedicated team and budget to develop a marketable product/service.\n    *   Begin a strategic review of the Indian GCC's organizational structure to identify and empower emerging leaders for global roles.\n\n*   **180-Day (Business Model Pivot):**\n    *   Launch the first version of the \"AI Cybersecurity\" service to a select group of Bosch's enterprise customers.\n    *   Begin the transition to a \"Service as a Software\" model for at least one of the successful agentic AI solutions, offering it as a subscription service.\n    *   Announce the elevation of the Indian GCC to a \"Global Innovation Hub,\" with new leadership roles and a mandate for end-to-end product ownership.\n\n#### **2028 Foresight & Org Design:**\n\n*   **Investment Decisions:** By 2028, a significant portion of BGSW's R&D budget will be allocated to AI-native product development, with a focus on agentic systems and AI-powered security. Investment in legacy systems and non-software-defined projects will be curtailed.\n*   **Board Directions:** The Bosch Global Board will increasingly look to BGSW's leadership in India for strategic direction on software-led innovation. The BGSW board will include members with deep expertise in AI and software-as-a-service business models.\n*   **Organizational Restructuring:** BGSW will evolve into a more decentralized, product-oriented organization. The Indian GCC will not be a \"center\" but a co-headquarters, with global product lines led from Bengaluru. The workforce will be upskilled, with a focus on AI/ML expertise, and the company will actively recruit from India's vibrant startup ecosystem.\n\n#### **GCC India Deep-Dive:**\n\nThe evolution of BGSW's Indian GCC is the linchpin of this entire strategy. The future of the GCC is not as a delivery hub but as a global strategic headquarters for software innovation. This means:\n\n*   **From Execution to Ownership:** The Indian GCC will move from executing on a roadmap defined elsewhere to owning the entire product lifecycle, from ideation and development to marketing and P&L.\n*   **Cultivating Global Leaders:** BGSW must proactively identify and groom a new generation of leaders from within its Indian operations, providing them with the autonomy and resources to lead global teams and initiatives.\n*   **Tapping into the Ecosystem:** The GCC must become an active participant in India's startup ecosystem, investing in promising new companies, and fostering a culture of open innovation.\n*   **A Beacon for Bosch:** The transformed Indian GCC will serve as a model for the rest of Bosch, demonstrating how to build an agile, software-first organization that can thrive in the age of AI.\n\n### **Evidence Vault**\n\n*   \"AI in Cybersecurity Revenue Opportunity\" - Based on analysis from McKinsey, BCG, and Bain.\n*   \"AI Services Market Projections\" - Based on data from Deloitte, KPMG, and PwC.\n*   \"The Rise of Agentic AI\" - Insights from Andreessen Horowitz and MIT Sloan.\n*   \"India's Digital Economy\" - Synthesized from reports by the World Bank, IMF, and OECD.\n*   \"The Future of the Automotive Industry\" - Based on Accenture Strategy's research on Software-Defined Vehicles.\n*   \"Bosch's Indian GCC\" - Information from Bosch's public statements and industry reports.\n*   \"The Future of GCCs in India\" - Based on reports from McKinsey and Bain.\n*   \"Global Economic Outlook\" - Based on forecasts from Deutsche Bank and Goldman Sachs.` },
-  ],
-  "2": [
-    { id: "h4", runDate: "2026-03-22 08:00", status: "Completed", duration: "5m 10s", workflow: "Market Trend Analysis", agents: ["Trend Detector", "Report Generator"], description: "Analyzed 12 market sectors, generated weekly trend report",
-      reportMarkdown: `# Market Trend Analysis — Week of March 22, 2026\n\n## Market Overview\n\nAnalyzed **12 market sectors** with data from Bloomberg Finance API.\n\n## Sector Performance\n\n| Sector | Weekly Change | Trend | Signal |\n|--------|:---:|:---:|:---:|\n| Technology | +2.4% | 📈 Bullish | Strong Buy |\n| Healthcare | +1.1% | 📈 Bullish | Hold |\n| Energy | -0.8% | 📉 Bearish | Watch |\n| Finance | +0.6% | ➡️ Neutral | Hold |\n| Consumer | +1.8% | 📈 Bullish | Buy |\n\n## Key Insights\n\n### Tech Sector Rally\nDriven by **strong earnings** from major cloud providers and continued AI investment.\n\n### Energy Decline\n- Oil prices dropped **3.2%** due to increased supply forecasts\n- Renewable energy stocks showed **resilience** (+0.4%)\n\n## Risk Factors\n\n1. **Interest rate uncertainty** — Fed meeting next week\n2. **Geopolitical tensions** — Potential supply chain disruptions\n3. **Earnings season** — Mixed signals from retail sector\n\n> *Next report scheduled: March 18, 2026*` },
-  ],
-};
-
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-primary text-primary-foreground" },
-  running: { label: "Running", className: "bg-primary/70 text-primary-foreground" },
-  failed: { label: "Failed", className: "bg-destructive text-destructive-foreground" },
-  paused: { label: "Paused", className: "bg-muted-foreground text-primary-foreground" },
+  active: { label: "Active", className: "bg-bosch-green text-primary-foreground" },
+  running: { label: "Running", className: "bg-bosch-yellow text-foreground" },
+  failed: { label: "Failed", className: "bg-destructive text-primary-foreground" },
+  paused: { label: "Paused", className: "bg-bosch-gray text-primary-foreground" },
 };
 
 const statusFilters: JobStatus[] = ["active", "running", "failed", "paused"];
@@ -138,7 +114,12 @@ const initialForm: CreateJobFormData = {
 
 // ─── Main Component ──────────────────────────────────────────
 export default function SchedulingPage() {
-  const [jobs, setJobs] = useState(initialJobs);
+  const { toast } = useToast();
+  const { data: workflowsData } = useWorkflows();
+  const workflowsList = useMemo(() => (workflowsData?.items ?? []).map(w => ({ id: w.id, title: w.title })), [workflowsData]);
+  const { data: jobsData = [] } = useScheduledJobs();
+  const jobs = jobsData;
+
   const [historyJobId, setHistoryJobId] = useState<string | null>(null);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [search, setSearch] = useState("");
@@ -146,6 +127,11 @@ export default function SchedulingPage() {
   const [editJob, setEditJob] = useState<ScheduledJob | null>(null);
   const [previewEntry, setPreviewEntry] = useState<HistoryEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const toggleMutation = useToggleJob();
+  const createMutation = useCreateJob();
+  const updateMutation = useUpdateJob();
+  const deleteMutation = useDeleteJob();
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
@@ -163,74 +149,43 @@ export default function SchedulingPage() {
   }), [jobs]);
 
   const toggleJob = (id: string) => {
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === id
-          ? { ...j, enabled: !j.enabled, status: (j.enabled ? "paused" : "active") as JobStatus }
-          : j
-      )
-    );
+    toggleMutation.mutate(id);
   };
 
-  const handleSaveJob = (form: CreateJobFormData) => {
-    const wf = mockWorkflows.find(w => w.id === form.workflowId);
-    const newJob: ScheduledJob = {
-      id: String(Date.now()),
-      jobName: form.name,
-      type: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression).split(" ")[0] : "One-time",
-      workflowId: form.workflowId,
-      workflowTitle: wf?.title || "—",
-      scheduleTime: form.scheduleType === "recurring" ? form.cronExpression : form.oneTimeDate,
-      nextRun: "Pending",
-      lastRun: "—",
-      status: form.enabled ? "active" : "paused",
-      notify: false,
-      enabled: form.enabled,
-      jobsDone: 0,
-      userPrompt: form.userPrompt,
-      cronExpression: form.cronExpression,
-      timezone: form.timezone,
-      wakeMode: form.executionContext.wakeMode,
-      outputFormat: form.outputBehavior.expectedOutputFormat,
-      deliveryMethods: form.outputBehavior.deliveryMethods,
-      failureBehavior: form.failureBehavior,
-    };
-    setJobs(prev => [newJob, ...prev]);
-    setShowCreateWizard(false);
+  const handleSaveJob = async (form: CreateJobFormData) => {
+    try {
+      await createMutation.mutateAsync(formToPayload(form));
+      setShowCreateWizard(false);
+      toast({ title: "Schedule created successfully" });
+    } catch {
+      toast({ title: "Failed to create schedule", variant: "destructive" });
+    }
   };
 
-  const handleEditSave = (form: CreateJobFormData) => {
+  const handleEditSave = async (form: CreateJobFormData) => {
     if (!editJob) return;
-    const wf = mockWorkflows.find(w => w.id === form.workflowId);
-    const updatedJob: ScheduledJob = {
-      ...editJob,
-      jobName: form.name,
-      type: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression).split(" ")[0] : "One-time",
-      workflowId: form.workflowId,
-      workflowTitle: wf?.title || "—",
-      scheduleTime: form.scheduleType === "recurring" ? form.cronExpression : form.oneTimeDate,
-      status: form.enabled ? "active" : "paused",
-      enabled: form.enabled,
-      userPrompt: form.userPrompt,
-      cronExpression: form.cronExpression,
-      timezone: form.timezone,
-      wakeMode: form.executionContext.wakeMode,
-      outputFormat: form.outputBehavior.expectedOutputFormat,
-      deliveryMethods: form.outputBehavior.deliveryMethods,
-      failureBehavior: form.failureBehavior,
-    };
-    setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
-    setEditJob(null);
+    try {
+      await updateMutation.mutateAsync({ id: editJob.id, data: formToPayload(form) });
+      setEditJob(null);
+      toast({ title: "Schedule updated successfully" });
+    } catch {
+      toast({ title: "Failed to update schedule", variant: "destructive" });
+    }
   };
 
-  const deleteJob = (id: string) => {
-    setJobs(prev => prev.filter(j => j.id !== id));
-    setDeleteConfirm(null);
+  const deleteJob = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      setDeleteConfirm(null);
+      toast({ title: "Schedule deleted" });
+    } catch {
+      toast({ title: "Failed to delete schedule", variant: "destructive" });
+    }
   };
 
   // ─── History View ────────────────────────────────────────
   const historyJob = historyJobId ? jobs.find((j) => j.id === historyJobId) : null;
-  const historyEntries = historyJobId ? mockHistory[historyJobId] || [] : [];
+  const { data: historyEntries = [] } = useJobHistory(historyJobId);
 
   if (historyJob) {
     return (
@@ -240,7 +195,7 @@ export default function SchedulingPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Schedules
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-blue-dark flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl gradient-turquoise flex items-center justify-center shadow-sm">
               <History className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
@@ -256,8 +211,8 @@ export default function SchedulingPage() {
           ) : (
             <div className="space-y-3">
               {historyEntries.map((entry, i) => (
-                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-4 md:p-5 hover:shadow-md transition-all">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                <motion.div key={entry.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card border border-border rounded-md p-5 hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={entry.status} />
                       <div>
@@ -265,7 +220,7 @@ export default function SchedulingPage() {
                         <p className="text-xs text-muted-foreground">Duration: {entry.duration}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => setPreviewEntry(entry)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -278,7 +233,7 @@ export default function SchedulingPage() {
                     </div>
                   </div>
                   <p className="text-sm text-foreground mb-3">{entry.description}</p>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> {entry.workflow}</span>
                     <span className="flex items-center gap-1"><Bot className="w-3 h-3" /> {entry.agents.join(", ")}</span>
                   </div>
@@ -350,12 +305,12 @@ export default function SchedulingPage() {
       },
       failureBehavior: editJob.failureBehavior || initialForm.failureBehavior,
     };
-    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit />;
+    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit workflows={workflowsList} />;
   }
 
   // ─── Create Wizard View ──────────────────────────────────
   if (showCreateWizard) {
-    return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} />;
+    return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} workflows={workflowsList} />;
   }
 
   // ─── List View ───────────────────────────────────────────
@@ -381,10 +336,10 @@ export default function SchedulingPage() {
         {/* Status Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Active", value: counts.active, icon: Activity, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
+            { label: "Active", value: counts.active, icon: Activity, color: "border-l-bosch-green", iconBg: "bg-bosch-green/10 text-bosch-green" },
             { label: "Running", value: counts.running, icon: Play, color: "border-l-primary", iconBg: "bg-primary/10 text-primary" },
             { label: "Failed", value: counts.failed, icon: AlertTriangle, color: "border-l-destructive", iconBg: "bg-destructive/10 text-destructive" },
-            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-muted-foreground", iconBg: "bg-muted-foreground/10 text-muted-foreground" },
+            { label: "Paused", value: counts.paused, icon: Pause, color: "border-l-bosch-gray", iconBg: "bg-bosch-gray/10 text-bosch-gray" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1, type: "spring", stiffness: 300, damping: 25 }} whileHover={{ y: -2, boxShadow: "0 8px 24px -8px hsl(220 20% 10% / 0.12)" }}>
               <Card className={`border-l-4 ${stat.color} rounded-md shadow-sm transition-all`}>
@@ -465,7 +420,7 @@ export default function SchedulingPage() {
                         <button onClick={() => setEditJob(job)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="Edit">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
+                        <button onClick={() => toggleJob(job.id)} className={`p-2 rounded-lg transition-colors ${job.enabled ? "text-bosch-green hover:bg-bosch-green/10" : "text-muted-foreground hover:bg-accent"}`} title={job.enabled ? "Pause" : "Play"}>
                           {job.enabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                         </button>
                         <button onClick={() => setHistoryJobId(job.id)} className="p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors" title="History">
@@ -508,7 +463,7 @@ export default function SchedulingPage() {
 }
 
 // ─── Create/Edit Schedule Wizard ──────────────────────────────────
-function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean }) {
+function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean; workflows: Array<{ id: string; title: string }> }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<CreateJobFormData>(initialData || initialForm);
 
@@ -574,7 +529,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
       <div className="max-w-3xl mx-auto w-full flex flex-col h-full p-6 pb-0">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-primary" : "gradient-blue")}>
+          <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shadow-colored", isEdit ? "bg-bosch-turquoise" : "gradient-blue")}>
             {isEdit ? <Edit className="w-5 h-5 text-primary-foreground" /> : <Timer className="w-5 h-5 text-primary-foreground" />}
           </div>
           <div>
@@ -592,7 +547,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 i === step ? "gradient-blue text-primary-foreground shadow-colored" :
-                i < step ? "bg-primary/10 text-primary" :
+                i < step ? "bg-bosch-green/10 text-bosch-green" :
                 "bg-muted text-muted-foreground"
               )}
             >
@@ -619,7 +574,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
                   <Select value={form.workflowId} onValueChange={(v) => update("workflowId", v)}>
                     <SelectTrigger><SelectValue placeholder="Select a workflow…" /></SelectTrigger>
                     <SelectContent>
-                      {mockWorkflows.map((w) => (
+                      {workflows.map((w) => (
                         <SelectItem key={w.id} value={w.id}>{w.title}</SelectItem>
                       ))}
                     </SelectContent>
@@ -643,8 +598,8 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
             {step === 1 && (
               <>
                 {form.scheduleType === "recurring" && cronValidation.valid && (
-                  <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
-                    <p className="text-sm font-semibold text-primary">{cronToHuman(form.cronExpression)}</p>
+                  <div className="rounded-xl border-2 border-bosch-turquoise/30 bg-bosch-turquoise/5 p-4">
+                    <p className="text-sm font-semibold text-bosch-turquoise">{cronToHuman(form.cronExpression)}</p>
                     <p className="text-xs text-muted-foreground mt-1 font-mono">{form.cronExpression} • {form.timezone}</p>
                   </div>
                 )}
@@ -924,7 +879,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
                   {[
                     { title: "Identity", items: [
                       { k: "Name", v: form.name || "—" },
-                      { k: "Workflow", v: mockWorkflows.find(w => w.id === form.workflowId)?.title || "—" },
+                      { k: "Workflow", v: workflows.find(w => w.id === form.workflowId)?.title || "—" },
                       { k: "Enabled", v: form.enabled ? "Yes" : "No" },
                     ]},
                     { title: "Schedule", items: [
@@ -955,7 +910,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
                   </div>
                 </div>
                 {form.userPrompt && (
-                  <div className="p-4 rounded-md bg-primary/5 border border-primary/20">
+                  <div className="p-4 rounded-md bg-bosch-purple/5 border border-bosch-purple/20">
                     <h4 className="text-sm font-bold text-foreground mb-1">User Prompt</h4>
                     <p className="text-sm text-muted-foreground">{form.userPrompt}</p>
                   </div>
@@ -975,7 +930,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit }: { onSav
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={() => onSave(form)} className="gradient-blue text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
+            <Button onClick={() => onSave(form)} className="gradient-green text-primary-foreground border-0 shadow-sm hover:opacity-90 rounded-md">
               <Check className="w-4 h-4 mr-1" /> {isEdit ? "Update Job" : "Save Job"}
             </Button>
           )}

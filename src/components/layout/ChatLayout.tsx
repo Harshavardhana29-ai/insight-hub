@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Settings, ChevronDown, User, LogOut,
@@ -14,10 +14,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SettingsModal } from "./SettingsModal";
+import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 
 const historyItems = [
   { id: "h2", title: "Global Report on GCC", date: "Mar 25, 2026", workflow: "AI News Digest", status: "Completed" },
-  { id: "h4", title: "Weekly Market Report", date: "Mar 11, 2024", workflow: "Market Trend Analysis", status: "Completed" },
+  { id: "h4", title: "Weekly Market Report", date: "Mar 24, 2026", workflow: "Market Trend Analysis", status: "Completed" },
 ];
 
 const settingsItems = [
@@ -38,6 +39,20 @@ export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNew
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsPopupOpen, setSettingsPopupOpen] = useState(false);
   const [activeSettingsPage, setActiveSettingsPage] = useState<string | null>(null);
+
+  const { data: recentRuns = [] } = useRecentSchedulerRuns();
+  const allHistoryItems = useMemo(() => {
+    const schedulerItems = recentRuns
+      .filter(r => r.report_markdown)
+      .map(r => ({
+        id: `sched-${r.id}`,
+        title: r.job_name,
+        date: r.run_date,
+        workflow: r.workflow,
+        status: r.status,
+      }));
+    return [...schedulerItems, ...historyItems];
+  }, [recentRuns]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -123,7 +138,7 @@ export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNew
                 Recent Reports
               </p>
               <div className="space-y-0.5">
-                {historyItems.map((item) => (
+                {allHistoryItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => onSelectHistory(item.id)}

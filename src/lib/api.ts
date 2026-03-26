@@ -262,3 +262,116 @@ export const runsApi = {
   report: (runId: string) =>
     request<{ report_markdown: string }>(`/runs/${runId}/report`),
 };
+
+// ─── Scheduler ──────────────────────────────────────────────────
+
+export interface ScheduledJobApiResponse {
+  id: string;
+  job_name: string;
+  type: string;
+  workflow_id: string;
+  workflow_title: string;
+  schedule_time: string;
+  next_run: string;
+  last_run: string;
+  status: string;
+  notify: boolean;
+  enabled: boolean;
+  jobs_done: number;
+  user_prompt: string | null;
+  cron_expression: string | null;
+  timezone: string;
+  wake_mode: string;
+  output_format: string;
+  output_schema: string | null;
+  delivery_methods: string[];
+  failure_behavior: {
+    concurrency: string;
+    retry: { enabled: boolean; maxAttempts: number; delaySeconds: number; backoff: string };
+    autoDisableAfter: number;
+  };
+}
+
+export interface JobHistoryApiResponse {
+  id: string;
+  run_date: string;
+  status: string;
+  duration: string;
+  workflow: string;
+  agents: string[];
+  description: string;
+  report_markdown: string | null;
+}
+
+export interface JobCountsApiResponse {
+  active: number;
+  running: number;
+  failed: number;
+  paused: number;
+}
+
+export interface ScheduledJobCreatePayload {
+  name: string;
+  user_prompt: string;
+  workflow_id: string;
+  enabled: boolean;
+  schedule_type: string;
+  cron_expression: string;
+  one_time_date: string | null;
+  timezone: string;
+  wake_mode: string;
+  output_format: string;
+  output_schema: string;
+  delivery_methods: string[];
+  concurrency_policy: string;
+  retry_enabled: boolean;
+  retry_max_attempts: number;
+  retry_delay_seconds: number;
+  retry_backoff: string;
+  auto_disable_after: number;
+}
+
+export const schedulerApi = {
+  listJobs: (status?: string) => {
+    const qs = status && status !== "all" ? `?status=${status}` : "";
+    return request<ScheduledJobApiResponse[]>(`/scheduler/jobs${qs}`);
+  },
+
+  createJob: (data: ScheduledJobCreatePayload) =>
+    request<ScheduledJobApiResponse>("/scheduler/jobs", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateJob: (id: string, data: ScheduledJobCreatePayload) =>
+    request<ScheduledJobApiResponse>(`/scheduler/jobs/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteJob: (id: string) =>
+    request<void>(`/scheduler/jobs/${id}`, { method: "DELETE" }),
+
+  toggleJob: (id: string) =>
+    request<ScheduledJobApiResponse>(`/scheduler/jobs/${id}/toggle`, {
+      method: "POST",
+    }),
+
+  jobHistory: (id: string) =>
+    request<JobHistoryApiResponse[]>(`/scheduler/jobs/${id}/history`),
+
+  counts: () =>
+    request<JobCountsApiResponse>("/scheduler/jobs/counts"),
+
+  recentRuns: () =>
+    request<RecentRunApiResponse[]>("/scheduler/recent-runs"),
+};
+
+export interface RecentRunApiResponse {
+  id: string;
+  job_name: string;
+  run_date: string;
+  workflow: string;
+  status: string;
+  report_markdown: string | null;
+}
