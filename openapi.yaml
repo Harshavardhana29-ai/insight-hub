@@ -1,0 +1,50 @@
+swagger: "2.0"
+info:
+  title: mra-frontend-api
+  version: "1.1"
+schemes:
+  - https
+paths:
+  /:
+    get:
+      operationId: frontendRoot
+      x-google-backend:
+        address: https://mra-frontend-914025621211.us-central1.run.app
+        path_translation: APPEND_PATH_TO_ADDRESS
+        jwt_audience: https://mra-frontend-914025621211.us-central1.run.app
+        deadline: 30.0
+      responses:
+        "200":
+          description: OK
+  /assets/{file}:
+    get:
+      operationId: frontendAssets
+      parameters:
+        - in: path
+          name: file
+          required: true
+          type: string
+      x-google-backend:
+        address: https://mra-frontend-914025621211.us-central1.run.app
+        path_translation: APPEND_PATH_TO_ADDRESS
+        jwt_audience: https://mra-frontend-914025621211.us-central1.run.app
+        deadline: 30.0
+      responses:
+        "200":
+          description: OK
+  /{path=**}:
+    get:
+      operationId: frontendPaths
+      parameters:
+        - in: path
+          name: path
+          required: true
+          type: string
+      x-google-backend:
+        address: https://mra-frontend-914025621211.us-central1.run.app
+        path_translation: APPEND_PATH_TO_ADDRESS
+        jwt_audience: https://mra-frontend-914025621211.us-central1.run.app
+        deadline: 30.0
+      responses:
+        "200":
+          description: OK
