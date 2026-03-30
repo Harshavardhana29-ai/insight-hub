@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SettingsModal } from "./SettingsModal";
 import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
+import { useAuth } from "@/contexts/AuthContext";
 
 const historyItems = [
   { id: "h2", title: "Global Report on GCC", date: "Mar 25, 2026", workflow: "AI News Digest", status: "Completed" },
@@ -35,6 +36,7 @@ interface ChatLayoutProps {
 }
 
 export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNewChat }: ChatLayoutProps) {
+  const { user, logout } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsPopupOpen, setSettingsPopupOpen] = useState(false);
@@ -172,22 +174,26 @@ export function ChatLayout({ children, onSelectHistory, selectedHistoryId, onNew
                 <DropdownMenuTrigger asChild>
                   <button className="w-full flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors">
                     <Avatar className="w-7 h-7">
-                      <AvatarFallback className="bg-primary/15 text-primary text-[10px] font-bold">KP</AvatarFallback>
+                      <AvatarFallback className="bg-primary/15 text-primary text-[10px] font-bold">
+                        {user ? user.display_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="text-left flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">Krishna Prakash</p>
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {user?.display_name || "User"}
+                      </p>
                     </div>
                     <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top" className="w-56">
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="text-sm font-semibold text-foreground">Krishna Prakash</p>
-                    <p className="text-xs text-muted-foreground">krishna.prakash@bosch.com</p>
+                    <p className="text-sm font-semibold text-foreground">{user?.display_name || "User"}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
                   </div>
                   <DropdownMenuItem><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem><LogOut className="w-4 h-4 mr-2" /> Log out</DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}><LogOut className="w-4 h-4 mr-2" /> Log out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
