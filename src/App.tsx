@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,6 +9,8 @@ import { ChatLayout } from "@/components/layout/ChatLayout";
 import ChatPage from "@/pages/ChatPage";
 import LoginPage from "@/pages/LoginPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
+import { useCreateChatSession, useDeleteChatSession, useChatSession } from "@/hooks/use-chat";
+import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 
 const queryClient = new QueryClient();
 
@@ -33,28 +35,83 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 /** The authenticated main app shell */
 function AuthenticatedApp() {
-  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
-  const [chatKey, setChatKey] = useState(0);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [cronReport, setCronReport] = useState<{
+    title: string; date: string; workflow: string; report: string;
+  } | null>(null);
 
-  const handleNewChat = useCallback(() => {
-    setSelectedHistoryId(null);
-    setChatKey(k => k + 1);
+  const createSession = useCreateChatSession();
+  const deleteSession = useDeleteChatSession();
+  const { data: recentRuns = [] } = useRecentSchedulerRuns();
+  const hasAutoCreated = useRef(false);
+
+  // Fetch the active session detail so we can check if it's empty
+  const { data: activeSessionData } = useChatSession(activeSessionId);
+
+  // Silently delete the current session if it has no messages
+  const cleanupEmptySession = useCallback(() => {
+    if (activeSessionId && activeSessionData && activeSessionData.messages.length === 0) {
+      deleteSession.mutate(activeSessionId);
+    }
+  }, [activeSessionId, activeSessionData, deleteSession]);
+
+  // Auto-create a default session on first mount (like ChatGPT)
+  useEffect(() => {
+    if (hasAutoCreated.current) return;
+    hasAutoCreated.current = true;
+    createSession.mutateAsync().then((session) => {
+      setActiveSessionId(session.id);
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleClearHistory = useCallback(() => {
-    setSelectedHistoryId(null);
+  const handleNewChat = useCallback(async () => {
+    // Clean up the current session if the user never sent a message
+    cleanupEmptySession();
+    setCronReport(null);
+    try {
+      const session = await createSession.mutateAsync();
+      setActiveSessionId(session.id);
+    } catch {
+      setActiveSessionId(null);
+    }
+  }, [createSession, cleanupEmptySession]);
+
+  const handleSelectSession = useCallback((id: string) => {
+    // Clean up the current session if the user never sent a message
+    cleanupEmptySession();
+    setCronReport(null);
+    setActiveSessionId(id);
+  }, [cleanupEmptySession]);
+
+  const handleSelectCronRun = useCallback((runId: string) => {
+    setActiveSessionId(null);
+    const run = recentRuns.find(r => r.id === runId);
+    if (run?.report_markdown) {
+      setCronReport({
+        title: run.job_name,
+        date: run.run_date,
+        workflow: run.workflow,
+        report: run.report_markdown,
+      });
+    }
+  }, [recentRuns]);
+
+  const handleClearCronReport = useCallback(() => {
+    setCronReport(null);
   }, []);
 
   return (
     <ChatLayout
-      onSelectHistory={setSelectedHistoryId}
-      selectedHistoryId={selectedHistoryId}
+      activeSessionId={activeSessionId}
+      onSelectSession={handleSelectSession}
       onNewChat={handleNewChat}
+      onSelectCronRun={handleSelectCronRun}
     >
       <ChatPage
-        key={chatKey}
-        selectedHistoryId={selectedHistoryId}
-        onClearHistory={handleClearHistory}
+        sessionId={activeSessionId}
+        cronReport={cronReport}
+        onClearCronReport={handleClearCronReport}
       />
     </ChatLayout>
   );

@@ -6,6 +6,8 @@
  * professionally designed cover page.
  */
 
+import { parseChartData } from "@/components/MarkdownChart";
+
 // ── Public types ────────────────────────────────────────────────
 export interface ExportOptions {
   reportMarkdown: string;
@@ -58,13 +60,118 @@ async function loadImageInfo(
   });
 }
 
+// ── Chart data → styled HTML table (reuses same parsing as MarkdownChart) ──
+
+const CHART_COLORS = [
+  "#007bc0", "#6366f1", "#10b981", "#f59e0b", "#ef4444",
+  "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#3b82f6",
+];
+
+/**
+ * Convert parsed chart data into a professional HTML table + horizontal bar chart for PDF/Word.
+ * Uses pure table-based layout (no flexbox) for reliable html2canvas & Word rendering.
+ */
+function chartDataToHtmlTable(
+  chart: { type: string; data: Record<string, string | number>[]; keys: string[]; nameKey: string },
+): string {
+  const { data, keys, nameKey } = chart;
+  const allHeaders = [nameKey, ...keys];
+
+  // ── Data Table ──
+  let html = '<table style="border-collapse:collapse;width:100%;margin:10px 0;font-size:9pt;">';
+  html += "<thead><tr>";
+  allHeaders.forEach((h) => {
+    html += `<th style="background:#007bc0;color:#fff;padding:7px 10px;border:1px solid #0069a8;text-align:left;font-weight:700;font-size:8.5pt;">${h}</th>`;
+  });
+  html += "</tr></thead><tbody>";
+
+  data.forEach((row, ri) => {
+    const bg = ri % 2 === 0 ? "#fff" : "#f5f8fc";
+    html += `<tr style="background:${bg};">`;
+    allHeaders.forEach((h) => {
+      html += `<td style="padding:6px 10px;border:1px solid #dee2e6;font-size:9pt;">${row[h] ?? ""}</td>`;
+    });
+    html += "</tr>";
+  });
+  html += "</tbody></table>";
+
+  // ── Horizontal Bar Chart (table-based for html2canvas/Word compatibility) ──
+  if (keys.length >= 1) {
+    const maxVal = Math.max(
+      ...data.flatMap((row) => keys.map((k) => (typeof row[k] === "number" ? (row[k] as number) : 0))),
+      1,
+    );
+
+    // Legend (if multiple series)
+    if (keys.length > 1) {
+      html += '<table style="border-collapse:collapse;margin:10px 0 4px 0;"><tr>';
+      keys.forEach((k, ki) => {
+        const color = CHART_COLORS[ki % CHART_COLORS.length];
+        html += `<td style="padding:0 12px 0 0;font-size:8pt;color:#555;white-space:nowrap;">`;
+        html += `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:2px;vertical-align:middle;margin-right:4px;"></span>${k}`;
+        html += `</td>`;
+      });
+      html += '</tr></table>';
+    }
+
+    // Bar chart using nested table for each bar
+    html += '<table style="border-collapse:collapse;width:100%;margin:6px 0 14px 0;">';
+    data.forEach((row) => {
+      const label = String(row[nameKey] ?? "");
+
+      keys.forEach((k, ki) => {
+        const val = typeof row[k] === "number" ? (row[k] as number) : 0;
+        const pct = Math.max(Math.round((val / maxVal) * 100), val > 0 ? 3 : 0);
+        const color = CHART_COLORS[ki % CHART_COLORS.length];
+        const showLabel = ki === 0;
+        const vPad = keys.length > 1 ? '1px' : '4px';
+
+        html += '<tr>';
+        // Label column
+        html += `<td style="width:130px;padding:${vPad} 8px ${vPad} 0;font-size:8.5pt;color:#333;white-space:nowrap;overflow:hidden;vertical-align:middle;">`;
+        html += showLabel ? label : '';
+        html += '</td>';
+        // Bar column — nested table for the colored bar
+        html += `<td style="padding:${vPad} 0;vertical-align:middle;">`;
+        html += `<table style="border-collapse:collapse;width:100%;"><tr>`;
+        if (pct > 0) {
+          html += `<td style="width:${pct}%;background:${color};border-radius:3px;padding:0;height:${keys.length > 1 ? '14px' : '20px'};font-size:0;line-height:0;">&nbsp;</td>`;
+        }
+        if (pct < 100) {
+          html += `<td style="padding:0;"></td>`;
+        }
+        html += '</tr></table>';
+        html += '</td>';
+        // Value column
+        html += `<td style="width:50px;padding:${vPad} 0 ${vPad} 8px;font-size:8pt;color:#555;text-align:right;vertical-align:middle;white-space:nowrap;">`;
+        html += `${val}`;
+        html += '</td>';
+        html += '</tr>';
+      });
+
+      // Spacer row between groups for stacked charts
+      if (keys.length > 1) {
+        html += '<tr><td colspan="3" style="height:6px;"></td></tr>';
+      }
+    });
+    html += '</table>';
+  }
+
+  return html;
+}
+
 // ── Markdown → styled HTML (used by html2canvas) ───────────────
 
 function mdToHtml(md: string): string {
   let src = md.replace(/\r\n/g, "\n");
 
-  // 1) Fenced code blocks → <pre> (before any inline processing)
+  // 1) Fenced code blocks → <pre> OR chart table if data is chart-like
   src = src.replace(/```\w*\n([\s\S]*?)```/g, (_, code: string) => {
+    // Use the same parseChartData logic as the browser MarkdownChart component
+    const chartData = parseChartData(code.trim());
+    if (chartData) {
+      return `\n${chartDataToHtmlTable(chartData)}\n`;
+    }
     const escaped = code
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -276,7 +383,13 @@ export function renderHtmlForWordExport(md: string): string {
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`{3}([\s\S]*?)`{3}/g, "<pre><code>$1</code></pre>")
+    .replace(/`{3}([\s\S]*?)`{3}/g, (_, code: string) => {
+      const chartData = parseChartData(code.trim());
+      if (chartData) {
+        return chartDataToHtmlTable(chartData);
+      }
+      return `<pre><code>${code}</code></pre>`;
+    })
     .replace(/`(.+?)`/g, "<code>$1</code>")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     .replace(/(?<!")(https?:\/\/[^\s<)"]+)/g, '<a href="$1">$1</a>')

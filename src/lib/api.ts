@@ -389,3 +389,68 @@ export interface RecentRunApiResponse {
   status: string;
   report_markdown: string | null;
 }
+
+// ─── Chat Sessions ──────────────────────────────────────────────
+
+export interface ChatMessageApiResponse {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant";
+  content: string;
+  message_type: "text" | "report" | "error";
+  workflow_id: string | null;
+  run_id: string | null;
+  workflow_title: string | null;
+  created_at: string;
+}
+
+export interface ChatSessionApiResponse {
+  id: string;
+  title: string;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message_preview: string | null;
+}
+
+export interface ChatSessionDetailApiResponse {
+  id: string;
+  title: string;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  messages: ChatMessageApiResponse[];
+}
+
+export const chatApi = {
+  listSessions: () =>
+    request<ChatSessionApiResponse[]>("/chat/sessions"),
+
+  createSession: (title = "New Research") =>
+    request<ChatSessionApiResponse>("/chat/sessions", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+
+  getSession: (sessionId: string) =>
+    request<ChatSessionDetailApiResponse>(`/chat/sessions/${sessionId}`),
+
+  renameSession: (sessionId: string, title: string) =>
+    request<ChatSessionApiResponse>(`/chat/sessions/${sessionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteSession: (sessionId: string) =>
+    request<void>(`/chat/sessions/${sessionId}`, { method: "DELETE" }),
+
+  sendMessage: (sessionId: string, content: string, workflowId?: string) =>
+    request<ChatMessageApiResponse>(`/chat/sessions/${sessionId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({
+        content,
+        workflow_id: workflowId || null,
+      }),
+    }),
+};
