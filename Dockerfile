@@ -6,7 +6,10 @@ COPY package.json pnpm-lock.yaml* package-lock.json* bun.lock* bun.lockb* ./
 RUN corepack enable && pnpm install --frozen-lockfile
  
 COPY . .
-RUN VITE_API_BASE=https://mra-backend-gateway-bnwb9717.uc.gateway.dev/api pnpm build
+RUN VITE_API_BASE=https://mra-backend-gateway-bnwb9717.uc.gateway.dev/api \
+    VITE_MCP_BASE=https://bdo-saarthi-sso-mcp-dev.azurewebsites.net \
+    VITE_REDIRECT_URI=https://mra-frontend-gateway-bnwb9717.uc.gateway.dev/auth/callback \
+    pnpm build
  
 FROM nginx:1.27-alpine
  
