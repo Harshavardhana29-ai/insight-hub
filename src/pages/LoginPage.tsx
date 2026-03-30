@@ -125,8 +125,6 @@ export default function LoginPage() {
 
             <p className="text-center text-xs text-muted-foreground">
               By signing in, you agree to the organization's security policies.
-              <br />
-              Your session will be active for 24 hours.
             </p>
           </div>
         </div>
