@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import {
   type AuthUser,
   getStoredToken,
@@ -64,13 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Complete the login flow after SSO callback.
    * Takes the MCP session_id, syncs with our backend to create a local user + JWT.
    */
-  const completeLogin = async (mcpSessionId: string) => {
+  const completeLogin = useCallback(async (mcpSessionId: string) => {
     const response = await syncWithBackend(mcpSessionId);
     storeAuth(response.access_token, response.user);
     setUser(response.user);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await backendLogout();
       await ssoLogout();
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearAuth();
       setUser(null);
     }
-  };
+  }, []);
 
   const refreshUser = async () => {
     setIsLoading(true);

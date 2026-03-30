@@ -11,7 +11,7 @@
  * 6. Redirect to main app
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { handleSSOCallback, getSSOUserInfo, getMcpSessionId } from "@/lib/auth";
@@ -22,9 +22,13 @@ export default function AuthCallbackPage() {
   const { completeLogin } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Processing authentication...");
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
     const processCallback = async () => {
+      // Guard against double-execution (React re-renders, StrictMode, etc.)
+      if (hasProcessed.current) return;
+      hasProcessed.current = true;
       const code = searchParams.get("code");
       const state = searchParams.get("state");
       const error = searchParams.get("error");
@@ -81,7 +85,8 @@ export default function AuthCallbackPage() {
     };
 
     processCallback();
-  }, [searchParams, navigate, completeLogin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
