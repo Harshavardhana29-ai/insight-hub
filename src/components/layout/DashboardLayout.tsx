@@ -123,6 +123,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </header>
 
+      {/* Bosch Rainbow Strip */}
+      <div
+        className="w-full shrink-0"
+        style={{
+          height: 6,
+          backgroundImage: "url(/bosch-rainbow.svg)",
+          backgroundSize: "100% 100%",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+
       {/* Content */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {children}

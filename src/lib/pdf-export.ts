@@ -376,47 +376,8 @@ function mdToHtml(md: string): string {
 // ── HTML for Word export ────────────────────────────────────────
 
 export function renderHtmlForWordExport(md: string): string {
-  const normalized = md.replace(/^(\s*)\*(\s+)/gm, "$1-$2");
-  return normalized
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`{3}([\s\S]*?)`{3}/g, (_, code: string) => {
-      const chartData = parseChartData(code.trim());
-      if (chartData) {
-        return chartDataToHtmlTable(chartData);
-      }
-      return `<pre><code>${code}</code></pre>`;
-    })
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    .replace(/(?<!")(https?:\/\/[^\s<)"]+)/g, '<a href="$1">$1</a>')
-    .replace(/^> (.+)$/gm, "<blockquote><p>$1</p></blockquote>")
-    .replace(/^\| (.+) \|$/gm, (match) => {
-      const cells = match.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-      return "<tr>" + cells.map((c) => `<td>${c}</td>`).join("") + "</tr>";
-    })
-    .replace(/^\|[-:|\s]+\|$/gm, "")
-    .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
-      const rows = match.trim().split("\n").filter((r) => r.trim());
-      if (rows.length > 0) {
-        const header = rows[0].replace(/<td>/g, "<th>").replace(/<\/td>/g, "</th>");
-        const body = rows.slice(1).join("\n");
-        return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
-      }
-      return match;
-    })
-    .replace(/^(\s*)- (.+)$/gm, (_, indent, content) => {
-      const level = Math.floor((indent || "").length / 4);
-      return `<li${level > 0 ? ` style="margin-left:${level * 20}px"` : ""}>${content}</li>`;
-    })
-    .replace(/^(\d+)\. (.+)$/gm, "<li>$2</li>")
-    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
-    .replace(/\n{2,}/g, "</p><p>")
-    .replace(/\n/g, "<br/>")
-    .replace(/^(?!<[huptblo])/gm, "");
+  // Reuse the same rich mdToHtml converter used for PDF so formatting is identical
+  return mdToHtml(md);
 }
 
 // ── PDF generation (html2canvas approach) ───────────────────────
@@ -653,14 +614,29 @@ export async function generateWordReport(opts: ExportOptions): Promise<void> {
   const html = renderHtmlForWordExport(opts.reportMarkdown);
   const ts = formatTimestamp();
 
+  // Load both logos (same as PDF cover page)
   let logoHtml = "";
   try {
-    const logo = await loadImageInfo("/bosch-alt.png");
-    if (logo) {
-      logoHtml = `<p style="text-align:center;margin-top:40px;margin-bottom:10px;"><img src="${logo.dataUrl}" width="120" height="${Math.round(120 / (logo.w / logo.h))}" alt="Bosch" /></p>`;
+    const [logo1, logo2] = await Promise.all([
+      loadImageInfo("/image.png"),
+      loadImageInfo("/bosch-alt.png"),
+    ]);
+    if (logo1 || logo2) {
+      const imgs: string[] = [];
+      if (logo1) {
+        const h1 = 60;
+        const w1 = Math.round(h1 * (logo1.w / logo1.h));
+        imgs.push(`<img src="${logo1.dataUrl}" width="${w1}" height="${h1}" alt="Logo" style="vertical-align:middle;" />`);
+      }
+      if (logo2) {
+        const h2 = 60;
+        const w2 = Math.round(h2 * (logo2.w / logo2.h));
+        imgs.push(`<img src="${logo2.dataUrl}" width="${w2}" height="${h2}" alt="Bosch" style="vertical-align:middle;" />`);
+      }
+      logoHtml = `<p style="text-align:center;margin-top:40px;margin-bottom:10px;">${imgs.join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`;
     }
   } catch {
-    /* continue without logo */
+    /* continue without logos */
   }
 
   const docContent = `
