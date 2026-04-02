@@ -382,8 +382,8 @@ export function ChatLayout({
                                 run.status === "completed"
                                   ? "bg-green-500/10 text-green-600"
                                   : run.status === "failed"
-                                  ? "bg-red-500/10 text-red-600"
-                                  : "bg-yellow-500/10 text-yellow-600"
+                                    ? "bg-red-500/10 text-red-600"
+                                    : "bg-yellow-500/10 text-yellow-600"
                               )}>
                                 {run.status}
                               </span>
@@ -482,6 +482,15 @@ export function ChatLayout({
             </Popover>
           </div>
         </header>
+        <div
+          className="w-full shrink-0"
+          style={{
+            height: 6,
+            backgroundImage: "url(/bosch-rainbow.svg)",
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
 
         {/* Page Content */}
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">
