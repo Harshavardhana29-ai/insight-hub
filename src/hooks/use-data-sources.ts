@@ -50,6 +50,21 @@ export function useCreateDataSource() {
   });
 }
 
+export function useUpdateDataSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<DataSourceCreate & { status: string }> }) =>
+      dataSourcesApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["data-sources"] });
+      qc.invalidateQueries({ queryKey: ["data-sources-stats"] });
+      qc.invalidateQueries({ queryKey: ["activity-log"] });
+      qc.invalidateQueries({ queryKey: ["topics"] });
+      qc.invalidateQueries({ queryKey: ["tags"] });
+    },
+  });
+}
+
 export function useDeleteDataSource() {
   const qc = useQueryClient();
   return useMutation({

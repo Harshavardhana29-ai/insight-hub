@@ -2,15 +2,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from "recharts";
+import { BOSCH_CHART_COLORS } from "@/lib/bosch-colors";
 
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2, 220 70% 50%))",
-  "hsl(var(--chart-3, 150 60% 45%))",
-  "hsl(var(--chart-4, 280 65% 55%))",
-  "hsl(var(--chart-5, 30 80% 55%))",
-  "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6",
-];
+const COLORS = BOSCH_CHART_COLORS;
 
 interface ChartData {
   type: "bar" | "stacked-bar";

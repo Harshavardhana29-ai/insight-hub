@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search, Plus, Globe, Filter, Trash2, Clock,
-  Database, Tag, X, Loader2,
+  Database, Tag, X, Loader2, Pencil,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -11,14 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import {
   useDataSources, useDataSourceStats, useActivityLog,
-  useTopics, useTags, useCreateDataSource, useDeleteDataSource,
+  useTopics, useTags, useCreateDataSource, useUpdateDataSource, useDeleteDataSource,
 } from "@/hooks/use-data-sources";
+import type { DataSourceResponse } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 export default function KnowledgeBasePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [topicFilter, setTopicFilter] = useState("All");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [editingSource, setEditingSource] = useState<DataSourceResponse | null>(null);
   const { toast } = useToast();
 
   const { data: sourcesData, isLoading } = useDataSources({
@@ -176,14 +178,23 @@ export default function KnowledgeBasePage() {
                       </div>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => handleDelete(source.id)}
-                        disabled={deleteMutation.isPending}
-                        className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setEditingSource(source)}
+                          className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(source.id)}
+                          disabled={deleteMutation.isPending}
+                          className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </motion.tr>
                 ))
@@ -221,6 +232,21 @@ export default function KnowledgeBasePage() {
             <DialogTitle>Add Data Source</DialogTitle>
           </DialogHeader>
           <CreateSourceForm onClose={() => setShowUploadModal(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingSource} onOpenChange={(open) => { if (!open) setEditingSource(null); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Data Source</DialogTitle>
+          </DialogHeader>
+          {editingSource && (
+            <EditSourceForm
+              source={editingSource}
+              onClose={() => setEditingSource(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -441,6 +467,229 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
           {createMutation.isPending ? (
             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Adding…</span>
           ) : "Add Source"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditSourceForm({ source, onClose }: { source: DataSourceResponse; onClose: () => void }) {
+  const [url, setUrl] = useState(source.url || "");
+  const [title, setTitle] = useState(source.title || "");
+  const [description, setDescription] = useState(source.description || "");
+  const [selectedTopic, setSelectedTopic] = useState(source.topic || "");
+  const [topicSearch, setTopicSearch] = useState("");
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>(source.tags || []);
+  const [tagSearch, setTagSearch] = useState("");
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const { toast } = useToast();
+
+  const { data: predefinedTopics } = useTopics();
+  const { data: predefinedTags } = useTags();
+  const updateMutation = useUpdateDataSource();
+
+  const allTopics = predefinedTopics ?? [];
+  const allTags = predefinedTags ?? [];
+
+  const filteredTopics = allTopics.filter(t =>
+    t.toLowerCase().includes(topicSearch.toLowerCase())
+  );
+
+  const filteredTags = allTags.filter(t =>
+    t.toLowerCase().includes(tagSearch.toLowerCase()) && !selectedTags.includes(t)
+  );
+
+  const handleSelectTopic = (topic: string) => {
+    setSelectedTopic(topic);
+    setTopicSearch("");
+    setShowTopicDropdown(false);
+  };
+
+  const handleAddTag = (tag: string) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags(prev => [...prev, tag]);
+    }
+    setTagSearch("");
+    setShowTagDropdown(false);
+  };
+
+  const removeTag = (tag: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
+
+  const handleSubmit = async () => {
+    if (!url.trim() || !title.trim() || !selectedTopic) {
+      toast({ title: "Please fill in URL, Title, and Topic", variant: "destructive" });
+      return;
+    }
+    try {
+      await updateMutation.mutateAsync({
+        id: source.id,
+        data: {
+          url: url.trim(),
+          title: title.trim(),
+          description: description.trim() || undefined,
+          topic: selectedTopic,
+          tags: selectedTags,
+        },
+      });
+      toast({ title: "Data source updated successfully" });
+      onClose();
+    } catch {
+      toast({ title: "Failed to update data source", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-4 mt-2">
+      <div>
+        <label className="text-sm font-medium text-foreground">Webpage URL</label>
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://example.com/report"
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Source title"
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description…"
+          rows={2}
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+      </div>
+
+      {/* Topic Selection */}
+      <div>
+        <label className="text-sm font-medium text-foreground">Topic</label>
+        <div className="relative mt-1.5">
+          {selectedTopic ? (
+            <div className="flex items-center gap-2">
+              <TopicBadge topic={selectedTopic} />
+              <button onClick={() => setSelectedTopic("")} className="p-1 hover:bg-accent rounded-md transition-colors">
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={topicSearch}
+                onChange={(e) => { setTopicSearch(e.target.value); setShowTopicDropdown(true); }}
+                onFocus={() => setShowTopicDropdown(true)}
+                placeholder="Search or select a topic…"
+                className="w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {showTopicDropdown && (
+                <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {filteredTopics.map(topic => (
+                    <button
+                      key={topic}
+                      onClick={() => handleSelectTopic(topic)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                  {topicSearch.trim() && !allTopics.some(t => t.toLowerCase() === topicSearch.toLowerCase()) && (
+                    <button
+                      onClick={() => { handleSelectTopic(topicSearch.trim()); }}
+                      className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-accent transition-colors border-t border-border"
+                    >
+                      <Plus className="w-3.5 h-3.5 inline mr-1.5" />
+                      Create "{topicSearch.trim()}"
+                    </button>
+                  )}
+                  {filteredTopics.length === 0 && !topicSearch.trim() && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">No topics found</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Tags Selection */}
+      <div>
+        <label className="text-sm font-medium text-foreground">Tags</label>
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1.5 mb-2">
+            {selectedTags.map(tag => (
+              <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent rounded-lg text-xs font-medium text-accent-foreground">
+                <Tag className="w-3 h-3" />
+                {tag}
+                <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="relative mt-1.5">
+          <input
+            type="text"
+            value={tagSearch}
+            onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); }}
+            onFocus={() => setShowTagDropdown(true)}
+            placeholder="Search or add tags…"
+            className="w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {showTagDropdown && (tagSearch || filteredTags.length > 0) && (
+            <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              {filteredTags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => handleAddTag(tag)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                >
+                  {tag}
+                </button>
+              ))}
+              {tagSearch.trim() && !allTags.some(t => t.toLowerCase() === tagSearch.toLowerCase()) && !selectedTags.includes(tagSearch.trim()) && (
+                <button
+                  onClick={() => { handleAddTag(tagSearch.trim()); }}
+                  className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-accent transition-colors border-t border-border"
+                >
+                  <Plus className="w-3.5 h-3.5 inline mr-1.5" />
+                  Add "{tagSearch.trim()}"
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+        <button
+          onClick={onClose}
+          className="px-4 py-2.5 text-sm rounded-xl hover:bg-accent transition-colors text-muted-foreground font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={updateMutation.isPending}
+          className="px-5 py-2.5 text-sm rounded-xl gradient-blue text-primary-foreground hover:opacity-90 transition-all font-semibold shadow-colored disabled:opacity-50"
+        >
+          {updateMutation.isPending ? (
+            <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving…</span>
+          ) : "Save Changes"}
         </button>
       </div>
     </div>

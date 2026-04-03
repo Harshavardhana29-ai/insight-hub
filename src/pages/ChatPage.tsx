@@ -17,6 +17,7 @@ import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { generatePdfReport, generateWordReport } from "@/lib/pdf-export";
 import MarkdownChart, { parseChartData } from "@/components/MarkdownChart";
+import StructuredReport, { parseStructuredReport } from "@/components/StructuredReport";
 
 type RunStatus = "idle" | "running" | "completed" | "failed";
 
@@ -284,16 +285,22 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               <Badge variant="secondary" className="text-[10px]">{cronReport.date}</Badge>
               <Badge variant="outline" className="text-[10px]">{cronReport.workflow}</Badge>
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none
-              prose-headings:text-foreground prose-h1:text-lg prose-h1:font-bold prose-h1:mb-2
-              prose-h2:text-base prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1 prose-h2:text-primary
-              prose-p:text-foreground prose-p:text-sm prose-p:leading-relaxed
-              prose-strong:text-foreground prose-li:text-foreground prose-li:text-sm
-              prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                {cronReport.report}
-              </ReactMarkdown>
-            </div>
+            {(() => {
+              const structured = parseStructuredReport(cronReport.report);
+              if (structured) return <StructuredReport data={structured} />;
+              return (
+                <div className="prose prose-sm dark:prose-invert max-w-none
+                  prose-headings:text-foreground prose-h1:text-lg prose-h1:font-bold prose-h1:mb-2
+                  prose-h2:text-base prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1 prose-h2:text-primary
+                  prose-p:text-foreground prose-p:text-sm prose-p:leading-relaxed
+                  prose-strong:text-foreground prose-li:text-foreground prose-li:text-sm
+                  prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {cronReport.report}
+                  </ReactMarkdown>
+                </div>
+              );
+            })()}
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
               <Button
                 onClick={() => handleDownload("pdf", cronReport.report, cronReport.title)}
@@ -354,16 +361,22 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
                         </div>
                       ) : (
                         <>
-                          <div className="prose prose-sm dark:prose-invert max-w-none
-                            prose-headings:text-foreground prose-h1:text-lg prose-h1:font-bold prose-h1:mb-2
-                            prose-h2:text-base prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1 prose-h2:text-primary
-                            prose-p:text-foreground prose-p:text-sm prose-p:leading-relaxed
-                            prose-strong:text-foreground prose-li:text-foreground prose-li:text-sm
-                            prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                              {msg.content}
-                            </ReactMarkdown>
-                          </div>
+                          {(() => {
+                            const structured = parseStructuredReport(msg.content);
+                            if (structured) return <StructuredReport data={structured} />;
+                            return (
+                              <div className="prose prose-sm dark:prose-invert max-w-none
+                                prose-headings:text-foreground prose-h1:text-lg prose-h1:font-bold prose-h1:mb-2
+                                prose-h2:text-base prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1 prose-h2:text-primary
+                                prose-p:text-foreground prose-p:text-sm prose-p:leading-relaxed
+                                prose-strong:text-foreground prose-li:text-foreground prose-li:text-sm
+                                prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                  {msg.content}
+                                </ReactMarkdown>
+                              </div>
+                            );
+                          })()}
                           {msg.message_type === "report" && (
                             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                               <Button
@@ -473,13 +486,13 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
                   onClick={() => setShowWorkflowPicker(!showWorkflowPicker)}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                     selectedWorkflow
-                      ? "bg-[#007bc0]/10 text-[#007bc0] hover:bg-[#007bc0]/20"
+                      ? "bg-primary/10 text-primary hover:bg-primary/20"
                       : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                   }`}
                 >
-                  <GitBranch className={`w-3.5 h-3.5 ${selectedWorkflow ? "text-[#007bc0]" : ""}`} />
+                  <GitBranch className={`w-3.5 h-3.5 ${selectedWorkflow ? "text-primary" : ""}`} />
                   <span className="hidden sm:inline">{selectedWorkflow?.title || "Workflow"}</span>
-                  <ChevronDown className={`w-3 h-3 ${selectedWorkflow ? "text-[#007bc0]" : ""}`} />
+                  <ChevronDown className={`w-3 h-3 ${selectedWorkflow ? "text-primary" : ""}`} />
                 </button>
 
                 <AnimatePresence>
