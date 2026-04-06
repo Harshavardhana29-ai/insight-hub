@@ -102,6 +102,7 @@ export interface UserInfoResponse {
 export interface AuthUser {
   id: string;
   sso_id: string;
+  ntid: string | null;
   email: string;
   display_name: string;
   first_name: string | null;

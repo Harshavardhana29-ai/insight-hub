@@ -92,7 +92,7 @@ export default function UserManagementPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-              placeholder="Search users by name or email…"
+              placeholder="Search users by name or NTID…"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-card border border-border placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             />
           </div>
@@ -163,7 +163,7 @@ export default function UserManagementPage() {
               <thead>
                 <tr style={{ backgroundColor: boschBlue[50] }}>
                   <th className="text-left text-xs font-semibold text-white px-5 py-3.5 uppercase tracking-wide">User</th>
-                  <th className="text-left text-xs font-semibold text-white px-5 py-3.5 uppercase tracking-wide">Email</th>
+                  <th className="text-left text-xs font-semibold text-white px-5 py-3.5 uppercase tracking-wide">NTID</th>
                   <th className="text-left text-xs font-semibold text-white px-5 py-3.5 uppercase tracking-wide">Role</th>
                   {isSuperAdmin && (
                     <th className="text-left text-xs font-semibold text-white px-5 py-3.5 uppercase tracking-wide">Assigned To</th>
@@ -207,7 +207,7 @@ export default function UserManagementPage() {
                           <span className="text-sm font-medium text-foreground truncate">{u.display_name}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">{u.email}</td>
+                      <td className="px-5 py-4 text-sm text-muted-foreground font-mono">{u.ntid || "—"}</td>
                       <td className="px-5 py-4"><RoleBadge role={u.role} /></td>
                       {isSuperAdmin && (
                         <td className="px-5 py-4 text-sm text-muted-foreground">
@@ -305,7 +305,7 @@ export default function UserManagementPage() {
 
 
 function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onClose: () => void }) {
-  const [email, setEmail] = useState("");
+  const [ntid, setNtid] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -317,13 +317,13 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
   const { data: admins } = useAdmins();
 
   const handleSubmit = async () => {
-    if (!email.trim() || !displayName.trim()) {
-      toast({ title: "Email and Display Name are required", variant: "destructive" });
+    if (!ntid.trim() || !displayName.trim()) {
+      toast({ title: "NTID and Display Name are required", variant: "destructive" });
       return;
     }
 
     const payload: UserCreatePayload = {
-      email: email.trim(),
+      ntid: ntid.trim().toLowerCase(),
       display_name: displayName.trim(),
       first_name: firstName.trim() || undefined,
       last_name: lastName.trim() || undefined,
@@ -343,14 +343,15 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
   return (
     <div className="space-y-4 mt-2">
       <div>
-        <label className="text-sm font-medium text-foreground">Email</label>
+        <label className="text-sm font-medium text-foreground">NTID</label>
         <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="user@bosch.com"
-          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+          type="text"
+          value={ntid}
+          onChange={(e) => setNtid(e.target.value)}
+          placeholder="e.g. ahc7kor"
+          className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring font-mono"
         />
+        <p className="text-[11px] text-muted-foreground mt-1">Bosch NT-ID of the user (case-insensitive)</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -397,7 +398,7 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
           >
             <option value="">Select an admin…</option>
             {(admins ?? []).map(a => (
-              <option key={a.id} value={a.id}>{a.display_name} ({a.email})</option>
+              <option key={a.id} value={a.id}>{a.display_name} ({a.ntid || a.email})</option>
             ))}
           </select>
         </div>
@@ -495,7 +496,7 @@ function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isS
                 className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Select an admin…</option>
                 {(admins ?? []).map(a => (
-                  <option key={a.id} value={a.id}>{a.display_name} ({a.email})</option>
+                  <option key={a.id} value={a.id}>{a.display_name} ({a.ntid || a.email})</option>
                 ))}
               </select>
             </div>

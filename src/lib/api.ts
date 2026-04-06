@@ -440,6 +440,7 @@ export interface RecentRunApiResponse {
 export interface UserResponse {
   id: string;
   sso_id: string;
+  ntid: string | null;
   email: string;
   display_name: string;
   first_name: string | null;
@@ -459,7 +460,7 @@ export interface UserListResponse {
 }
 
 export interface UserCreatePayload {
-  email: string;
+  ntid: string;
   display_name: string;
   first_name?: string;
   last_name?: string;
