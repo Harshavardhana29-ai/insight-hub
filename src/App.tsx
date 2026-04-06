@@ -5,10 +5,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { isAssignedUser } from "@/lib/auth";
 import { ChatLayout } from "@/components/layout/ChatLayout";
 import ChatPage from "@/pages/ChatPage";
 import LoginPage from "@/pages/LoginPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
+import RestrictedAccessPage from "@/pages/RestrictedAccessPage";
 import { useCreateChatSession, useDeleteChatSession, useChatSession } from "@/hooks/use-chat";
 import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 
@@ -16,7 +18,7 @@ const queryClient = new QueryClient();
 
 /** Wrapper that redirects unauthenticated users to /login */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -28,6 +30,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user && !isAssignedUser(user)) {
+    return <RestrictedAccessPage />;
   }
 
   return <>{children}</>;

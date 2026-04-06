@@ -1,13 +1,15 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Database, GitBranch, Calendar, ArrowLeft } from "lucide-react";
+import { Database, GitBranch, Calendar, ArrowLeft, Users } from "lucide-react";
 import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowPage from "@/pages/WorkflowPage";
 import SchedulingPage from "@/pages/SchedulingPage";
+import UserManagementPage from "@/pages/UserManagementPage";
 
 const pageConfig: Record<string, { title: string; icon: React.ElementType; Component: React.ComponentType }> = {
   knowledge: { title: "Knowledge Base", icon: Database, Component: KnowledgeBasePage },
   workflows: { title: "Workflows", icon: GitBranch, Component: WorkflowPage },
   scheduler: { title: "Scheduler", icon: Calendar, Component: SchedulingPage },
+  users: { title: "User Management", icon: Users, Component: UserManagementPage },
 };
 
 interface SettingsModalProps {

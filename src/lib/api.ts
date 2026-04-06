@@ -44,6 +44,7 @@ export interface DataSourceResponse {
   topic: string;
   tags: string[];
   status: string;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +63,7 @@ export interface DataSourceCreate {
   description?: string;
   topic: string;
   tags: string[];
+  is_public?: boolean;
 }
 
 export interface DataSourceStats {
@@ -112,6 +114,17 @@ export const dataSourcesApi = {
   topics: () => request<string[]>("/data-sources/topics"),
 
   tags: () => request<string[]>("/data-sources/tags"),
+
+  listPublic: (params?: { search?: string; topic?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set("search", params.search);
+    if (params?.topic && params.topic !== "All") qs.set("topic", params.topic);
+    const query = qs.toString();
+    return request<DataSourceListResponse>(`/data-sources/public/list${query ? `?${query}` : ""}`);
+  },
+
+  syncPublic: (id: string) =>
+    request<DataSourceResponse>(`/data-sources/public/${id}/sync`, { method: "POST" }),
 };
 
 // ─── Workflows ──────────────────────────────────────────────────
@@ -134,6 +147,7 @@ export interface WorkflowResponse {
   status: string;
   source_selection_mode: string;
   selected_topics: string[];
+  is_public: boolean;
   created_at: string;
   updated_at: string;
   data_sources: WorkflowDataSource[];
@@ -153,6 +167,7 @@ export interface WorkflowCreate {
   selected_topics: string[];
   data_source_ids: string[];
   agent_ids: string[];
+  is_public?: boolean;
 }
 
 export interface WorkflowUpdate {
@@ -163,6 +178,7 @@ export interface WorkflowUpdate {
   selected_topics?: string[];
   data_source_ids?: string[];
   agent_ids?: string[];
+  is_public?: boolean;
 }
 
 export interface WorkflowStats {
@@ -194,6 +210,14 @@ export const workflowsApi = {
     request<void>(`/workflows/${id}`, { method: "DELETE" }),
 
   stats: () => request<WorkflowStats>("/workflows/stats"),
+
+  listPublic: (topic?: string) => {
+    const qs = topic && topic.toLowerCase() !== "all" ? `?topic=${topic}` : "";
+    return request<WorkflowListResponse>(`/workflows/public/list${qs}`);
+  },
+
+  syncPublic: (id: string) =>
+    request<WorkflowResponse>(`/workflows/public/${id}/sync`, { method: "POST" }),
 };
 
 // ─── Agents ─────────────────────────────────────────────────────
@@ -389,6 +413,86 @@ export interface RecentRunApiResponse {
   status: string;
   report_markdown: string | null;
 }
+
+// ─── User Management ────────────────────────────────────────────
+
+export interface UserResponse {
+  id: string;
+  sso_id: string;
+  email: string;
+  display_name: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  is_active: boolean;
+  admin_id: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserListResponse {
+  items: UserResponse[];
+  total: number;
+}
+
+export interface UserCreatePayload {
+  email: string;
+  display_name: string;
+  first_name?: string;
+  last_name?: string;
+  role: "admin" | "assistant";
+  admin_id?: string;
+}
+
+export interface UserUpdatePayload {
+  display_name?: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+  admin_id?: string | null;
+  is_active?: boolean;
+}
+
+export const usersApi = {
+  list: (params?: { search?: string; role?: string; page?: number; page_size?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set("search", params.search);
+    if (params?.role && params.role !== "all") qs.set("role", params.role);
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.page_size) qs.set("page_size", String(params.page_size));
+    const query = qs.toString();
+    return request<UserListResponse>(`/users${query ? `?${query}` : ""}`);
+  },
+
+  get: (id: string) => request<UserResponse>(`/users/${id}`),
+
+  create: (data: UserCreatePayload) =>
+    request<UserResponse>("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: UserUpdatePayload) =>
+    request<UserResponse>(`/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    request<void>(`/users/${id}`, { method: "DELETE" }),
+
+  listAdmins: () => request<UserResponse[]>("/users/admins"),
+
+  listMyAssistants: () => request<UserResponse[]>("/users/my-assistants"),
+
+  addAssistant: (data: UserCreatePayload) =>
+    request<UserResponse>("/users/assistants", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
 
 // ─── Chat Sessions ──────────────────────────────────────────────
 

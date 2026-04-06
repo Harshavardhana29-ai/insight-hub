@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon, Sun, Settings, ChevronDown, User, LogOut,
   PanelLeftClose, PanelLeft, MessageSquare, Clock, Plus,
-  Database, GitBranch, Calendar, Trash2, Pencil, Check, X,
+  Database, GitBranch, Calendar, Trash2, Pencil, Check, X, Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -22,12 +22,15 @@ import {
 } from "@/hooks/use-chat";
 import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 
+import { isSuperAdmin as checkSuperAdmin, isAdminOrAbove as checkAdminOrAbove } from "@/lib/auth";
+
 type SidebarTab = "chats" | "cron";
 
-const settingsItems = [
-  { id: "knowledge", label: "Knowledge Base", icon: Database },
-  { id: "workflows", label: "Workflows", icon: GitBranch },
-  { id: "scheduler", label: "Scheduler", icon: Calendar },
+const ALL_SETTINGS_ITEMS = [
+  { id: "knowledge", label: "Knowledge Base", icon: Database, roles: ["super_admin", "admin", "assistant"] },
+  { id: "workflows", label: "Workflows", icon: GitBranch, roles: ["super_admin", "admin", "assistant"] },
+  { id: "scheduler", label: "Scheduler", icon: Calendar, roles: ["super_admin", "admin", "assistant"] },
+  { id: "users", label: "User Management", icon: Users, roles: ["super_admin", "admin"] },
 ];
 
 interface ChatLayoutProps {
@@ -46,6 +49,10 @@ export function ChatLayout({
   onSelectCronRun,
 }: ChatLayoutProps) {
   const { user, logout } = useAuth();
+  const settingsItems = useMemo(
+    () => ALL_SETTINGS_ITEMS.filter(item => user && item.roles.includes(user.role)),
+    [user],
+  );
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsPopupOpen, setSettingsPopupOpen] = useState(false);
@@ -410,6 +417,9 @@ export function ChatLayout({
                     <div className="text-left flex-1 min-w-0">
                       <p className="text-xs font-semibold text-foreground truncate">
                         {user?.display_name || "User"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground capitalize">
+                        {user?.role?.replace("_", " ") || ""}
                       </p>
                     </div>
                     <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />

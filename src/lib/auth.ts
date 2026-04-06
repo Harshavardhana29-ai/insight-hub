@@ -107,11 +107,30 @@ export interface AuthUser {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  role: string;
+  role: "super_admin" | "admin" | "assistant" | "user";
   is_active: boolean;
+  admin_id: string | null;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type UserRole = AuthUser["role"];
+
+export function isAssignedUser(user: AuthUser): boolean {
+  return user.role === "super_admin" || user.role === "admin" || user.role === "assistant";
+}
+
+export function isSuperAdmin(user: AuthUser): boolean {
+  return user.role === "super_admin";
+}
+
+export function isAdmin(user: AuthUser): boolean {
+  return user.role === "admin";
+}
+
+export function isAdminOrAbove(user: AuthUser): boolean {
+  return user.role === "super_admin" || user.role === "admin";
 }
 
 export interface AuthTokenResponse {

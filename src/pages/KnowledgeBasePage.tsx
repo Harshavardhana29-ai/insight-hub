@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search, Plus, Globe, Filter, Trash2, Clock,
-  Database, Tag, X, Loader2, Pencil,
+  Database, Tag, X, Loader2, Pencil, Download, GlobeLock,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -14,14 +14,25 @@ import {
   useTopics, useTags, useCreateDataSource, useUpdateDataSource, useDeleteDataSource,
 } from "@/hooks/use-data-sources";
 import type { DataSourceResponse } from "@/lib/api";
+import { dataSourcesApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { boschBlue, boschGreen } from "@/lib/bosch-colors";
 
 export default function KnowledgeBasePage() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [topicFilter, setTopicFilter] = useState("All");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingSource, setEditingSource] = useState<DataSourceResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<"mine" | "public">("mine");
   const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const showPublicTab = user && isAdminOrAbove(user);
+  const canSetPublic = user && isSuperAdmin(user);
 
   const { data: sourcesData, isLoading } = useDataSources({
     search: searchQuery || undefined,
@@ -32,7 +43,30 @@ export default function KnowledgeBasePage() {
   const { data: topicsList } = useTopics();
   const deleteMutation = useDeleteDataSource();
 
-  const sources = sourcesData?.items ?? [];
+  const { data: publicSourcesData, isLoading: publicLoading } = useQuery({
+    queryKey: ["public-data-sources", searchQuery, topicFilter],
+    queryFn: () => dataSourcesApi.listPublic({
+      search: searchQuery || undefined,
+      topic: topicFilter !== "All" ? topicFilter : undefined,
+    }),
+    enabled: activeTab === "public" && !!showPublicTab,
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: (id: string) => dataSourcesApi.syncPublic(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["data-sources"] });
+      qc.invalidateQueries({ queryKey: ["data-sources-stats"] });
+      toast({ title: "Public data source synced to your collection" });
+    },
+    onError: () => {
+      toast({ title: "Failed to sync", variant: "destructive" });
+    },
+  });
+
+  const sources = activeTab === "public"
+    ? (publicSourcesData?.items ?? [])
+    : (sourcesData?.items ?? []);
 
   const handleDelete = async (id: string) => {
     try {
@@ -74,14 +108,44 @@ export default function KnowledgeBasePage() {
               {(topicsList ?? []).map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
-          >
-            <Plus className="w-4 h-4" />
-            Add Data Source
-          </button>
+          {activeTab === "mine" && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
+            >
+              <Plus className="w-4 h-4" />
+              Add Data Source
+            </button>
+          )}
         </div>
+
+        {/* Tabs for Admin: My Sources / Public Sources */}
+        {showPublicTab && (
+          <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
+            <button
+              onClick={() => setActiveTab("mine")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "mine"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              My Sources
+            </button>
+            <button
+              onClick={() => setActiveTab("public")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "public"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <GlobeLock className="w-3.5 h-3.5" />
+              Public Sources
+            </button>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -179,21 +243,44 @@ export default function KnowledgeBasePage() {
                     </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setEditingSource(source)}
-                          className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(source.id)}
-                          disabled={deleteMutation.isPending}
-                          className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {source.is_public && activeTab === "mine" && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold mr-1"
+                            style={{ backgroundColor: boschGreen[95], color: boschGreen[50] }}
+                          >
+                            Public
+                          </span>
+                        )}
+                        {activeTab === "public" ? (
+                          <button
+                            onClick={() => syncMutation.mutate(source.id)}
+                            disabled={syncMutation.isPending}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                            style={{ backgroundColor: boschBlue[50] }}
+                            title="Sync to my collection"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Sync
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setEditingSource(source)}
+                              className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(source.id)}
+                              disabled={deleteMutation.isPending}
+                              className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
@@ -254,6 +341,8 @@ export default function KnowledgeBasePage() {
 }
 
 function CreateSourceForm({ onClose }: { onClose: () => void }) {
+  const { user } = useAuth();
+  const canSetPublic = user && isSuperAdmin(user);
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -263,6 +352,7 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const { toast } = useToast();
 
   const { data: predefinedTopics } = useTopics();
@@ -310,6 +400,7 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
         description: description.trim() || undefined,
         topic: selectedTopic,
         tags: selectedTags,
+        is_public: canSetPublic ? isPublic : undefined,
       });
       toast({ title: "Data source added successfully" });
       onClose();
@@ -452,6 +543,23 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
+      {canSetPublic && (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
+          <div>
+            <p className="text-sm font-medium text-foreground">Public Data Source</p>
+            <p className="text-xs text-muted-foreground">Make available for all admins to sync</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPublic(!isPublic)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${isPublic ? "" : "bg-muted-foreground/30"}`}
+            style={{ backgroundColor: isPublic ? boschGreen[50] : undefined }}
+          >
+            <span className={`absolute top-0.5 ${isPublic ? "left-5" : "left-0.5"} w-4 h-4 bg-white rounded-full shadow transition-all`} />
+          </button>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
         <button
           onClick={onClose}
@@ -474,6 +582,8 @@ function CreateSourceForm({ onClose }: { onClose: () => void }) {
 }
 
 function EditSourceForm({ source, onClose }: { source: DataSourceResponse; onClose: () => void }) {
+  const { user } = useAuth();
+  const canSetPublic = user && isSuperAdmin(user);
   const [url, setUrl] = useState(source.url || "");
   const [title, setTitle] = useState(source.title || "");
   const [description, setDescription] = useState(source.description || "");
@@ -483,6 +593,7 @@ function EditSourceForm({ source, onClose }: { source: DataSourceResponse; onClo
   const [selectedTags, setSelectedTags] = useState<string[]>(source.tags || []);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [isPublic, setIsPublic] = useState(source.is_public ?? false);
   const { toast } = useToast();
 
   const { data: predefinedTopics } = useTopics();
@@ -532,6 +643,7 @@ function EditSourceForm({ source, onClose }: { source: DataSourceResponse; onClo
           description: description.trim() || undefined,
           topic: selectedTopic,
           tags: selectedTags,
+          ...(canSetPublic ? { is_public: isPublic } : {}),
         },
       });
       toast({ title: "Data source updated successfully" });
@@ -674,6 +786,23 @@ function EditSourceForm({ source, onClose }: { source: DataSourceResponse; onClo
           )}
         </div>
       </div>
+
+      {canSetPublic && (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
+          <div>
+            <p className="text-sm font-medium text-foreground">Public Data Source</p>
+            <p className="text-xs text-muted-foreground">Make available for all admins to sync</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPublic(!isPublic)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${isPublic ? "" : "bg-muted-foreground/30"}`}
+            style={{ backgroundColor: isPublic ? boschGreen[50] : undefined }}
+          >
+            <span className={`absolute top-0.5 ${isPublic ? "left-5" : "left-0.5"} w-4 h-4 bg-white rounded-full shadow transition-all`} />
+          </button>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
         <button

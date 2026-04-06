@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, GitBranch, Edit, Trash2, Bot, Database,
-  Workflow, Zap, Search, X, ChevronDown, Loader2,
+  Workflow, Zap, Search, X, ChevronDown, Loader2, Download, GlobeLock,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -13,8 +13,13 @@ import { useWorkflows, useWorkflowStats, useCreateWorkflow, useUpdateWorkflow, u
 import { useDataSources } from "@/hooks/use-data-sources";
 import { useAgents, useAgentsByTopics, useTopicAgentMapping } from "@/hooks/use-agents";
 import { useTopics } from "@/hooks/use-data-sources";
+import { useAuth } from "@/contexts/AuthContext";
+import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { workflowsApi } from "@/lib/api";
 import type { WorkflowResponse, AgentResponse } from "@/lib/api";
+import { boschBlue, boschGreen } from "@/lib/bosch-colors";
 
 const topicGradient: Record<string, string> = {
   AI: "gradient-blue",
@@ -110,14 +115,38 @@ function SearchableDropdown({
 }
 
 export default function WorkflowPage() {
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowResponse | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"mine" | "public">("mine");
   const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const showPublicTab = user && isAdminOrAbove(user);
+  const canSetPublic = user && isSuperAdmin(user);
 
   // API hooks
   const { data: workflowsData, isLoading } = useWorkflows(selectedTopic !== "all" ? selectedTopic : undefined);
   const { data: statsData } = useWorkflowStats();
+
+  const { data: publicWorkflowsData } = useQuery({
+    queryKey: ["public-workflows", selectedTopic],
+    queryFn: () => workflowsApi.listPublic(selectedTopic !== "all" ? selectedTopic : undefined),
+    enabled: activeTab === "public" && !!showPublicTab,
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: (id: string) => workflowsApi.syncPublic(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      qc.invalidateQueries({ queryKey: ["workflow-stats"] });
+      toast({ title: "Public workflow synced to your collection" });
+    },
+    onError: () => {
+      toast({ title: "Failed to sync workflow", variant: "destructive" });
+    },
+  });
   const { data: topicsList } = useTopics();
   const { data: allDataSourcesData } = useDataSources();
   const { data: topicAgentMap } = useTopicAgentMapping();
@@ -136,6 +165,7 @@ export default function WorkflowPage() {
   }, [topicAgentMap]);
 
   // Form state
+  const [formIsPublic, setFormIsPublic] = useState(false);
   const [formTitle, setFormTitle] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
@@ -207,6 +237,7 @@ export default function WorkflowPage() {
 
   const resetForm = () => {
     setFormTitle("");
+    setFormIsPublic(false);
     setSelectedAgents([]);
     setSelectedAgentIds([]);
     setSourceSelectionMode("topic");
@@ -224,6 +255,7 @@ export default function WorkflowPage() {
   const openEdit = (workflow: WorkflowResponse) => {
     setEditingWorkflow(workflow);
     setFormTitle(workflow.title);
+    setFormIsPublic(workflow.is_public);
     setSelectedAgents(workflow.agents.map(a => a.name));
     setSelectedAgentIds(workflow.agents.map(a => a.id));
 
@@ -271,6 +303,7 @@ export default function WorkflowPage() {
             selected_topics: selectedSourceTopics,
             data_source_ids: Array.from(dsIds),
             agent_ids: selectedAgentIds,
+            ...(canSetPublic ? { is_public: formIsPublic } : {}),
           },
         });
         toast({ title: "Workflow updated" });
@@ -283,6 +316,7 @@ export default function WorkflowPage() {
           selected_topics: selectedSourceTopics,
           data_source_ids: Array.from(dsIds),
           agent_ids: selectedAgentIds,
+          ...(canSetPublic ? { is_public: formIsPublic } : {}),
         });
         toast({ title: "Workflow created" });
       }
@@ -302,7 +336,9 @@ export default function WorkflowPage() {
     }
   };
 
-  const filteredWorkflows = workflows;
+  const filteredWorkflows = activeTab === "public"
+    ? (publicWorkflowsData?.items ?? [])
+    : workflows;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -320,14 +356,44 @@ export default function WorkflowPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
-          >
-            <Plus className="w-4 h-4" />
-            Create Workflow
-          </button>
+          {activeTab === "mine" && (
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-5 py-2.5 gradient-blue text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-colored"
+            >
+              <Plus className="w-4 h-4" />
+              Create Workflow
+            </button>
+          )}
         </div>
+
+        {/* Tabs for Admin: My Workflows / Public Workflows */}
+        {showPublicTab && (
+          <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
+            <button
+              onClick={() => setActiveTab("mine")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "mine"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <GitBranch className="w-3.5 h-3.5" />
+              My Workflows
+            </button>
+            <button
+              onClick={() => setActiveTab("public")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "public"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <GlobeLock className="w-3.5 h-3.5" />
+              Public Workflows
+            </button>
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-4">
@@ -396,19 +462,40 @@ export default function WorkflowPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusIndicator status={workflow.status} />
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEdit(workflow)}
-                        className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
-                        title="Edit"
+                    {workflow.is_public && activeTab === "mine" && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                        style={{ backgroundColor: boschGreen[95], color: boschGreen[50] }}
                       >
-                        <Edit className="w-4 h-4" />
+                        Public
+                      </span>
+                    )}
+                    <StatusIndicator status={workflow.status} />
+                    {activeTab === "public" ? (
+                      <button
+                        onClick={() => syncMutation.mutate(workflow.id)}
+                        disabled={syncMutation.isPending}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                        style={{ backgroundColor: boschBlue[50] }}
+                        title="Sync to my collection"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Sync
                       </button>
-                      <button onClick={() => handleDelete(workflow.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(workflow)}
+                          className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(workflow.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -627,6 +714,23 @@ export default function WorkflowPage() {
               </div>
             </div>
           </div>
+
+          {canSetPublic && (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border mt-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Public Workflow</p>
+                <p className="text-xs text-muted-foreground">Make available for all admins to sync</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormIsPublic(!formIsPublic)}
+                className={`relative w-10 h-5 rounded-full transition-colors ${formIsPublic ? "" : "bg-muted-foreground/30"}`}
+                style={{ backgroundColor: formIsPublic ? boschGreen[50] : undefined }}
+              >
+                <span className={`absolute top-0.5 ${formIsPublic ? "left-5" : "left-0.5"} w-4 h-4 bg-white rounded-full shadow transition-all`} />
+              </button>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
             <button
