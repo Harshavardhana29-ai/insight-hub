@@ -20,7 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workflowsApi } from "@/lib/api";
 import type { WorkflowResponse, AgentResponse } from "@/lib/api";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 
 const PAGE_SIZE = 10;
 

@@ -29,7 +29,7 @@ import type {
 import { useWorkflows } from "@/hooks/use-workflows";
 import { useScheduledJobs, useJobHistory, useCreateJob, useUpdateJob, useDeleteJob, useToggleJob, formToPayload } from "@/hooks/use-scheduler";
 import { useToast } from "@/hooks/use-toast";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { formatRelativeTime, formatDateTime } from "@/lib/format-time";
 
 const SCHEDULER_PAGE_SIZE = 10;

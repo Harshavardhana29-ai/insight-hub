@@ -20,7 +20,7 @@ import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 
 const PAGE_SIZE = 10;
 

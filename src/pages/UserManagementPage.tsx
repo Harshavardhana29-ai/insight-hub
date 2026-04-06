@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { UserResponse, UserCreatePayload, UserUpdatePayload } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { boschBlue, boschGreen, boschPurple, boschGray, boschRed } from "@/lib/bosch-colors";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 
 const PAGE_SIZE = 10;
 
