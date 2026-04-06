@@ -14,6 +14,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { UserResponse, UserCreatePayload, UserUpdatePayload } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { boschBlue, boschGreen, boschPurple, boschGray, boschRed } from "@/lib/bosch-colors";
+import { Pagination } from "@/components/ui/Pagination";
+
+const PAGE_SIZE = 10;
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Shield }> = {
   super_admin: { label: "Super Admin", color: boschPurple[50], bg: boschPurple[95], icon: ShieldCheck },
@@ -40,6 +43,7 @@ export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const { toast } = useToast();
@@ -50,6 +54,8 @@ export default function UserManagementPage() {
   const { data: usersData, isLoading } = useUsers({
     search: searchQuery || undefined,
     role: roleFilter !== "all" ? roleFilter : undefined,
+    page,
+    page_size: PAGE_SIZE,
   });
 
   const deleteMutation = useDeleteUser();
@@ -85,7 +91,7 @@ export default function UserManagementPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               placeholder="Search users by name or email…"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-card border border-border placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             />
@@ -95,7 +101,7 @@ export default function UserManagementPage() {
               <Filter className="w-4 h-4 text-muted-foreground" />
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
+                onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
                 className="bg-card border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="all">All Roles</option>
@@ -253,6 +259,15 @@ export default function UserManagementPage() {
               </tbody>
             </table>
           </div>
+          {usersData && (
+            <Pagination
+              page={page}
+              totalPages={Math.ceil(usersData.total / PAGE_SIZE) || 1}
+              total={usersData.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       </div>
 

@@ -157,6 +157,9 @@ export interface WorkflowResponse {
 export interface WorkflowListResponse {
   items: WorkflowResponse[];
   total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 }
 
 export interface WorkflowCreate {
@@ -187,9 +190,14 @@ export interface WorkflowStats {
 }
 
 export const workflowsApi = {
-  list: (topic?: string) => {
-    const qs = topic && topic.toLowerCase() !== "all" ? `?topic=${topic}` : "";
-    return request<WorkflowListResponse>(`/workflows${qs}`);
+  list: (params?: { topic?: string; search?: string; page?: number; page_size?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.topic && params.topic.toLowerCase() !== "all") qs.set("topic", params.topic);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.page_size) qs.set("page_size", String(params.page_size));
+    const query = qs.toString();
+    return request<WorkflowListResponse>(`/workflows${query ? `?${query}` : ""}`);
   },
 
   get: (id: string) => request<WorkflowResponse>(`/workflows/${id}`),
@@ -369,10 +377,23 @@ export interface ScheduledJobCreatePayload {
   auto_disable_after: number;
 }
 
+export interface ScheduledJobListApiResponse {
+  items: ScheduledJobApiResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
 export const schedulerApi = {
-  listJobs: (status?: string) => {
-    const qs = status && status !== "all" ? `?status=${status}` : "";
-    return request<ScheduledJobApiResponse[]>(`/scheduler/jobs${qs}`);
+  listJobs: (params?: { status?: string; search?: string; page?: number; page_size?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status && params.status !== "all") qs.set("status", params.status);
+    if (params?.search) qs.set("search", params.search);
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.page_size) qs.set("page_size", String(params.page_size));
+    const query = qs.toString();
+    return request<ScheduledJobListApiResponse>(`/scheduler/jobs${query ? `?${query}` : ""}`);
   },
 
   createJob: (data: ScheduledJobCreatePayload) =>

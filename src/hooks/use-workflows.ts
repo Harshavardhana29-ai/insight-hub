@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workflowsApi, type WorkflowCreate, type WorkflowUpdate } from "@/lib/api";
 
-export function useWorkflows(topic?: string) {
+export function useWorkflows(params?: { topic?: string; search?: string; page?: number; page_size?: number } | string) {
+  const normalized = typeof params === "string" ? { topic: params } : params;
   return useQuery({
-    queryKey: ["workflows", topic],
-    queryFn: () => workflowsApi.list(topic),
+    queryKey: ["workflows", normalized],
+    queryFn: () => workflowsApi.list(normalized),
   });
 }
 

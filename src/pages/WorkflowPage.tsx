@@ -20,6 +20,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workflowsApi } from "@/lib/api";
 import type { WorkflowResponse, AgentResponse } from "@/lib/api";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
+import { Pagination } from "@/components/ui/Pagination";
+
+const PAGE_SIZE = 10;
 
 const topicGradient: Record<string, string> = {
   AI: "gradient-blue",
@@ -119,6 +122,8 @@ export default function WorkflowPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowResponse | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"mine" | "public">("mine");
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -127,7 +132,12 @@ export default function WorkflowPage() {
   const canSetPublic = user && isSuperAdmin(user);
 
   // API hooks
-  const { data: workflowsData, isLoading } = useWorkflows(selectedTopic !== "all" ? selectedTopic : undefined);
+  const { data: workflowsData, isLoading } = useWorkflows({
+    topic: selectedTopic !== "all" ? selectedTopic : undefined,
+    search: searchQuery || undefined,
+    page,
+    page_size: PAGE_SIZE,
+  });
   const { data: statsData } = useWorkflowStats();
 
   const { data: publicWorkflowsData } = useQuery({
@@ -422,12 +432,24 @@ export default function WorkflowPage() {
           ))}
         </div>
 
-        {/* Filters */}
+        {/* Search + Filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              placeholder="Search workflows…"
+              className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-card border border-border placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            />
+          </div>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           {["all", ...topics].map((t) => (
             <button
               key={t}
-              onClick={() => setSelectedTopic(t)}
+              onClick={() => { setSelectedTopic(t); setPage(1); }}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 selectedTopic === t
                   ? "gradient-blue text-primary-foreground shadow-colored"
@@ -535,6 +557,16 @@ export default function WorkflowPage() {
             </motion.div>
           ))}
         </div>
+
+        {activeTab === "mine" && workflowsData && (
+          <Pagination
+            page={workflowsData.page}
+            totalPages={workflowsData.pages}
+            total={workflowsData.total}
+            pageSize={workflowsData.page_size}
+            onPageChange={setPage}
+          />
+        )}
       </div>
 
       {/* Create / Edit Modal */}

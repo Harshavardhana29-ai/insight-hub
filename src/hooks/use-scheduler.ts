@@ -83,12 +83,18 @@ export function formToPayload(form: CreateJobFormData): ScheduledJobCreatePayloa
   };
 }
 
-export function useScheduledJobs() {
+export function useScheduledJobs(params?: { status?: string; search?: string; page?: number; page_size?: number }) {
   return useQuery({
-    queryKey: ["scheduled-jobs"],
+    queryKey: ["scheduled-jobs", params],
     queryFn: async () => {
-      const data = await schedulerApi.listJobs();
-      return data.map(mapJob);
+      const data = await schedulerApi.listJobs(params);
+      return {
+        items: data.items.map(mapJob),
+        total: data.total,
+        page: data.page,
+        page_size: data.page_size,
+        pages: data.pages,
+      };
     },
     refetchInterval: 3_000,
   });

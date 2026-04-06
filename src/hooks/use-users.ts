@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi, type UserCreatePayload, type UserUpdatePayload } from "@/lib/api";
 
-export function useUsers(params?: { search?: string; role?: string; page?: number }) {
+export function useUsers(params?: { search?: string; role?: string; page?: number; page_size?: number }) {
   return useQuery({
     queryKey: ["users", params],
     queryFn: () => usersApi.list(params),

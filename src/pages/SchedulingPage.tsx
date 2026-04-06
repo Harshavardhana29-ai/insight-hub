@@ -29,6 +29,9 @@ import type {
 import { useWorkflows } from "@/hooks/use-workflows";
 import { useScheduledJobs, useJobHistory, useCreateJob, useUpdateJob, useDeleteJob, useToggleJob, formToPayload } from "@/hooks/use-scheduler";
 import { useToast } from "@/hooks/use-toast";
+import { Pagination } from "@/components/ui/Pagination";
+
+const SCHEDULER_PAGE_SIZE = 10;
 
 // Simple markdown to HTML renderer
 function renderMarkdown(md: string): string {
@@ -117,29 +120,30 @@ export default function SchedulingPage() {
   const { toast } = useToast();
   const { data: workflowsData } = useWorkflows();
   const workflowsList = useMemo(() => (workflowsData?.items ?? []).map(w => ({ id: w.id, title: w.title })), [workflowsData]);
-  const { data: jobsData = [] } = useScheduledJobs();
-  const jobs = jobsData;
 
   const [historyJobId, setHistoryJobId] = useState<string | null>(null);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
   const [editJob, setEditJob] = useState<ScheduledJob | null>(null);
   const [previewEntry, setPreviewEntry] = useState<HistoryEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const { data: jobsData } = useScheduledJobs({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    search: search || undefined,
+    page,
+    page_size: SCHEDULER_PAGE_SIZE,
+  });
+  const jobs = jobsData?.items ?? [];
 
   const toggleMutation = useToggleJob();
   const createMutation = useCreateJob();
   const updateMutation = useUpdateJob();
   const deleteMutation = useDeleteJob();
 
-  const filtered = useMemo(() => {
-    return jobs.filter((j) => {
-      if (statusFilter !== "all" && j.status !== statusFilter) return false;
-      if (search && !j.jobName.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-  }, [jobs, search, statusFilter]);
+  const filtered = jobs;
 
   const counts = useMemo(() => ({
     active: jobs.filter(j => j.status === "active").length,
@@ -361,16 +365,16 @@ export default function SchedulingPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Search jobs..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
           </div>
           <div className="flex gap-1.5 flex-wrap">
             <Button
               variant={statusFilter === "all" ? "default" : "outline"} size="sm"
-              onClick={() => setStatusFilter("all")}
+              onClick={() => { setStatusFilter("all"); setPage(1); }}
               className={statusFilter === "all" ? "gradient-blue text-primary-foreground border-0" : ""}
             >All</Button>
             {statusFilters.map((s) => (
-              <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}
+              <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => { setStatusFilter(s); setPage(1); }}
                 className={statusFilter === s ? "gradient-blue text-primary-foreground border-0" : ""}
               >{statusConfig[s].label}</Button>
             ))}
@@ -439,6 +443,15 @@ export default function SchedulingPage() {
               </tbody>
             </table>
           </div>
+          {jobsData && (
+            <Pagination
+              page={jobsData.page}
+              totalPages={jobsData.pages}
+              total={jobsData.total}
+              pageSize={jobsData.page_size}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       </div>
 

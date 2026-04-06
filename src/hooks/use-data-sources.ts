@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataSourcesApi, type DataSourceCreate } from "@/lib/api";
 
-export function useDataSources(params?: { search?: string; topic?: string; page?: number }) {
+export function useDataSources(params?: { search?: string; topic?: string; page?: number; page_size?: number }) {
   return useQuery({
     queryKey: ["data-sources", params],
     queryFn: () => dataSourcesApi.list(params),

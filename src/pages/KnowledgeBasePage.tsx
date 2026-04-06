@@ -20,11 +20,15 @@ import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
+import { Pagination } from "@/components/ui/Pagination";
+
+const PAGE_SIZE = 10;
 
 export default function KnowledgeBasePage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [topicFilter, setTopicFilter] = useState("All");
+  const [page, setPage] = useState(1);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingSource, setEditingSource] = useState<DataSourceResponse | null>(null);
   const [activeTab, setActiveTab] = useState<"mine" | "public">("mine");
@@ -37,6 +41,8 @@ export default function KnowledgeBasePage() {
   const { data: sourcesData, isLoading } = useDataSources({
     search: searchQuery || undefined,
     topic: topicFilter !== "All" ? topicFilter : undefined,
+    page,
+    page_size: PAGE_SIZE,
   });
   const { data: statsData } = useDataSourceStats();
   const { data: activityLog } = useActivityLog();
@@ -92,7 +98,7 @@ export default function KnowledgeBasePage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               placeholder="Search knowledge sources…"
               className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-card border border-border placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             />
@@ -101,7 +107,7 @@ export default function KnowledgeBasePage() {
             <Filter className="w-4 h-4 text-muted-foreground" />
             <select
               value={topicFilter}
-              onChange={(e) => setTopicFilter(e.target.value)}
+              onChange={(e) => { setTopicFilter(e.target.value); setPage(1); }}
               className="bg-card border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option>All</option>
@@ -289,6 +295,15 @@ export default function KnowledgeBasePage() {
               </tbody>
             </table>
           </div>
+          {activeTab === "mine" && sourcesData && (
+            <Pagination
+              page={sourcesData.page}
+              totalPages={sourcesData.pages}
+              total={sourcesData.total}
+              pageSize={sourcesData.page_size}
+              onPageChange={setPage}
+            />
+          )}
         </div>
 
         {/* Activity Log */}
