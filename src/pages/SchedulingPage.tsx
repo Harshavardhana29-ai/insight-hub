@@ -444,16 +444,16 @@ export default function SchedulingPage() {
               </tbody>
             </table>
           </div>
-          {jobsData && (
-            <Pagination
-              page={jobsData.page}
-              totalPages={jobsData.pages}
-              total={jobsData.total}
-              pageSize={jobsData.page_size}
-              onPageChange={setPage}
-            />
-          )}
         </div>
+        {jobsData && (
+          <Pagination
+            page={jobsData.page}
+            totalPages={jobsData.pages}
+            total={jobsData.total}
+            pageSize={jobsData.page_size}
+            onPageChange={setPage}
+          />
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

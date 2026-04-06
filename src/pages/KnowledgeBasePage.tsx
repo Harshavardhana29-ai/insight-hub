@@ -16,7 +16,7 @@ import {
 import type { DataSourceResponse } from "@/lib/api";
 import { dataSourcesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
+import { isSuperAdmin, isAdminOrAbove, isAssignedUser } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
@@ -35,7 +35,7 @@ export default function KnowledgeBasePage() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const showPublicTab = user && isAdminOrAbove(user);
+  const showPublicTab = user && isAssignedUser(user);
   const canSetPublic = user && isSuperAdmin(user);
 
   const { data: sourcesData, isLoading } = useDataSources({
@@ -295,16 +295,16 @@ export default function KnowledgeBasePage() {
               </tbody>
             </table>
           </div>
-          {activeTab === "mine" && sourcesData && (
-            <Pagination
-              page={sourcesData.page}
-              totalPages={sourcesData.pages}
-              total={sourcesData.total}
-              pageSize={sourcesData.page_size}
-              onPageChange={setPage}
-            />
-          )}
         </div>
+        {activeTab === "mine" && sourcesData && (
+          <Pagination
+            page={sourcesData.page}
+            totalPages={sourcesData.pages}
+            total={sourcesData.total}
+            pageSize={sourcesData.page_size}
+            onPageChange={setPage}
+          />
+        )}
 
         {/* Activity Log */}
         <div className="bg-card border border-border rounded-md p-5 shadow-sm">

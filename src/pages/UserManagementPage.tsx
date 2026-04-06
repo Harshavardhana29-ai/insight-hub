@@ -267,16 +267,16 @@ export default function UserManagementPage() {
               </tbody>
             </table>
           </div>
-          {isSuperAdmin && usersData && (
-            <Pagination
-              page={page}
-              totalPages={Math.ceil(usersData.total / PAGE_SIZE) || 1}
-              total={usersData.total}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-            />
-          )}
         </div>
+        {isSuperAdmin && usersData && (
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(usersData.total / PAGE_SIZE) || 1}
+            total={usersData.total}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        )}
       </div>
 
       {/* Create Modal */}

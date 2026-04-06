@@ -14,7 +14,7 @@ import { useDataSources } from "@/hooks/use-data-sources";
 import { useAgents, useAgentsByTopics, useTopicAgentMapping } from "@/hooks/use-agents";
 import { useTopics } from "@/hooks/use-data-sources";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSuperAdmin, isAdminOrAbove } from "@/lib/auth";
+import { isSuperAdmin, isAdminOrAbove, isAssignedUser } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workflowsApi } from "@/lib/api";
@@ -128,7 +128,7 @@ export default function WorkflowPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const showPublicTab = user && isAdminOrAbove(user);
+  const showPublicTab = user && isAssignedUser(user);
   const canSetPublic = user && isSuperAdmin(user);
 
   // API hooks

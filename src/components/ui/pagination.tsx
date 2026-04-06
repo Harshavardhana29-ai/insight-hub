@@ -10,7 +10,7 @@ interface PaginationProps {
 }
 
 export function Pagination({ page, totalPages, total, pageSize, onPageChange }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (total === 0 || totalPages <= 1) return null;
 
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
@@ -29,7 +29,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPageChange }: 
   }
 
   return (
-    <div className="flex items-center justify-between pt-4 px-1">
+    <div className="flex items-center justify-between py-3 px-5">
       <p className="text-xs text-muted-foreground">
         Showing <span className="font-semibold text-foreground">{start}–{end}</span> of{" "}
         <span className="font-semibold text-foreground">{total}</span>

@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { isAssignedUser } from "@/lib/auth";
 import { ChatLayout } from "@/components/layout/ChatLayout";
+import { AssistantLayout } from "@/components/layout/AssistantLayout";
 import ChatPage from "@/pages/ChatPage";
 import LoginPage from "@/pages/LoginPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
@@ -125,6 +126,9 @@ function AuthenticatedApp() {
 
 /** App content with routes — inside BrowserRouter */
 function AppContent() {
+  const { user } = useAuth();
+  const isAssistant = user?.role === "assistant";
+
   return (
     <Routes>
       {/* Public routes */}
@@ -135,7 +139,7 @@ function AppContent() {
         path="/*"
         element={
           <ProtectedRoute>
-            <AuthenticatedApp />
+            {isAssistant ? <AssistantLayout /> : <AuthenticatedApp />}
           </ProtectedRoute>
         }
       />
