@@ -5,6 +5,7 @@ export function useUsers(params?: { search?: string; role?: string; page?: numbe
   return useQuery({
     queryKey: ["users", params],
     queryFn: () => usersApi.list(params),
+    enabled: params !== undefined,
   });
 }
 
@@ -15,10 +16,11 @@ export function useAdmins() {
   });
 }
 
-export function useMyAssistants() {
+export function useMyAssistants(enabled = true) {
   return useQuery({
     queryKey: ["users", "my-assistants"],
     queryFn: () => usersApi.listMyAssistants(),
+    enabled,
   });
 }
 

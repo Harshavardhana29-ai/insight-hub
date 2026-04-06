@@ -8,7 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  useUsers, useAdmins, useCreateUser, useUpdateUser, useDeleteUser,
+  useUsers, useAdmins, useMyAssistants, useCreateUser, useUpdateUser, useDeleteUser, useAddAssistant,
 } from "@/hooks/use-users";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserResponse, UserCreatePayload, UserUpdatePayload } from "@/lib/api";
@@ -51,15 +51,23 @@ export default function UserManagementPage() {
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isAdmin = currentUser?.role === "admin";
 
-  const { data: usersData, isLoading } = useUsers({
-    search: searchQuery || undefined,
-    role: roleFilter !== "all" ? roleFilter : undefined,
-    page,
-    page_size: PAGE_SIZE,
-  });
+  const { data: usersData, isLoading: usersLoading } = useUsers(
+    isSuperAdmin ? {
+      search: searchQuery || undefined,
+      role: roleFilter !== "all" ? roleFilter : undefined,
+      page,
+      page_size: PAGE_SIZE,
+    } : undefined,
+  );
 
+  const { data: myAssistants, isLoading: assistantsLoading } = useMyAssistants(isAdmin);
+
+  const isLoading = isSuperAdmin ? usersLoading : assistantsLoading;
   const deleteMutation = useDeleteUser();
-  const users = usersData?.items ?? [];
+
+  const users = isSuperAdmin
+    ? (usersData?.items ?? [])
+    : (myAssistants ?? []);
 
   const handleDelete = async (id: string) => {
     if (id === currentUser?.id) {
@@ -259,7 +267,7 @@ export default function UserManagementPage() {
               </tbody>
             </table>
           </div>
-          {usersData && (
+          {isSuperAdmin && usersData && (
             <Pagination
               page={page}
               totalPages={Math.ceil(usersData.total / PAGE_SIZE) || 1}
@@ -307,33 +315,36 @@ export default function UserManagementPage() {
 function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onClose: () => void }) {
   const [ntid, setNtid] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<"admin" | "assistant">(isSuperAdmin ? "admin" : "assistant");
   const [adminId, setAdminId] = useState<string>("");
   const { toast } = useToast();
 
   const createMutation = useCreateUser();
+  const addAssistantMutation = useAddAssistant();
   const { data: admins } = useAdmins();
+
+  const activeMutation = isSuperAdmin ? createMutation : addAssistantMutation;
 
   const handleSubmit = async () => {
     if (!ntid.trim() || !displayName.trim()) {
       toast({ title: "NTID and Display Name are required", variant: "destructive" });
       return;
     }
+    if (role === "assistant" && isSuperAdmin && !adminId) {
+      toast({ title: "Please assign the assistant to an admin", variant: "destructive" });
+      return;
+    }
 
     const payload: UserCreatePayload = {
       ntid: ntid.trim().toLowerCase(),
       display_name: displayName.trim(),
-      first_name: firstName.trim() || undefined,
-      last_name: lastName.trim() || undefined,
       role,
       admin_id: role === "assistant" && adminId ? adminId : undefined,
     };
 
     try {
-      await createMutation.mutateAsync(payload);
-      toast({ title: `User created successfully` });
+      await activeMutation.mutateAsync(payload);
+      toast({ title: "User created successfully" });
       onClose();
     } catch (err: any) {
       toast({ title: err.message || "Failed to create user", variant: "destructive" });
@@ -352,18 +363,6 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
           className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring font-mono"
         />
         <p className="text-[11px] text-muted-foreground mt-1">Bosch NT-ID of the user (case-insensitive)</p>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-sm font-medium text-foreground">First Name</label>
-          <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
-            className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-foreground">Last Name</label>
-          <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
-            className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">Display Name</label>
@@ -410,11 +409,11 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
         </button>
         <button
           onClick={handleSubmit}
-          disabled={createMutation.isPending}
+          disabled={activeMutation.isPending}
           className="px-5 py-2.5 text-sm rounded-xl text-white hover:opacity-90 transition-all font-semibold shadow-sm disabled:opacity-50"
           style={{ backgroundColor: boschBlue[50] }}
         >
-          {createMutation.isPending ? (
+          {activeMutation.isPending ? (
             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating…</span>
           ) : isSuperAdmin ? "Create User" : "Add Assistant"}
         </button>
@@ -426,8 +425,6 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
 
 function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isSuperAdmin: boolean; onClose: () => void }) {
   const [displayName, setDisplayName] = useState(user.display_name);
-  const [firstName, setFirstName] = useState(user.first_name || "");
-  const [lastName, setLastName] = useState(user.last_name || "");
   const [role, setRole] = useState(user.role);
   const [adminId, setAdminId] = useState(user.admin_id || "");
   const [isActive, setIsActive] = useState(user.is_active);
@@ -436,11 +433,16 @@ function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isS
   const updateMutation = useUpdateUser();
   const { data: admins } = useAdmins();
 
+  const availableAdmins = (admins ?? []).filter(a => a.id !== user.id);
+
   const handleSubmit = async () => {
+    if (role === "assistant" && isSuperAdmin && !adminId) {
+      toast({ title: "Please assign the assistant to an admin", variant: "destructive" });
+      return;
+    }
+
     const payload: UserUpdatePayload = {
       display_name: displayName.trim(),
-      first_name: firstName.trim() || undefined,
-      last_name: lastName.trim() || undefined,
     };
 
     if (isSuperAdmin) {
@@ -460,18 +462,12 @@ function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isS
 
   return (
     <div className="space-y-4 mt-2">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-sm font-medium text-foreground">First Name</label>
-          <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
-            className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
+      {user.ntid && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 border border-border">
+          <span className="text-xs text-muted-foreground">NTID:</span>
+          <span className="text-sm font-mono font-semibold text-foreground">{user.ntid}</span>
         </div>
-        <div>
-          <label className="text-sm font-medium text-foreground">Last Name</label>
-          <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
-            className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
-      </div>
+      )}
       <div>
         <label className="text-sm font-medium text-foreground">Display Name</label>
         <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
@@ -495,7 +491,7 @@ function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isS
               <select value={adminId} onChange={(e) => setAdminId(e.target.value)}
                 className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Select an admin…</option>
-                {(admins ?? []).map(a => (
+                {availableAdmins.map(a => (
                   <option key={a.id} value={a.id}>{a.display_name} ({a.ntid || a.email})</option>
                 ))}
               </select>
