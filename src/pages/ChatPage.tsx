@@ -18,6 +18,7 @@ import type { Components } from "react-markdown";
 import { generatePdfReport, generateWordReport } from "@/lib/pdf-export";
 import MarkdownChart, { parseChartData } from "@/components/MarkdownChart";
 import StructuredReport, { parseStructuredReport } from "@/components/StructuredReport";
+import { formatDateTime } from "@/lib/format-time";
 
 type RunStatus = "idle" | "running" | "completed" | "failed";
 
@@ -282,7 +283,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
             <div className="flex items-center gap-2 mb-3">
               <Bot className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">{cronReport.title}</span>
-              <Badge variant="secondary" className="text-[10px]">{cronReport.date}</Badge>
+              <Badge variant="secondary" className="text-[10px]">{formatDateTime(cronReport.date)}</Badge>
               <Badge variant="outline" className="text-[10px]">{cronReport.workflow}</Badge>
             </div>
             {(() => {
@@ -469,7 +470,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
         <div className="shrink-0 border-t border-border bg-background px-4 py-3">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Viewing scheduled report · {cronReport.date}
+              Viewing scheduled report · {formatDateTime(cronReport.date)}
             </p>
             <Button onClick={onClearCronReport} variant="outline" size="sm" className="text-xs gap-1.5">
               Close

@@ -52,8 +52,8 @@ export interface ScheduledJob {
   workflowId: string;
   workflowTitle: string;
   scheduleTime: string;
-  nextRun: string;
-  lastRun: string;
+  nextRun: string | null;
+  lastRun: string | null;
   status: JobStatus;
   notify: boolean;
   enabled: boolean;
@@ -70,7 +70,7 @@ export interface ScheduledJob {
 
 export interface HistoryEntry {
   id: string;
-  runDate: string;
+  runDate: string | null;
   status: string;
   duration: string;
   workflow: string;

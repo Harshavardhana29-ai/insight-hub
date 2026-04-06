@@ -23,6 +23,7 @@ import {
 import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
 
 import { isSuperAdmin as checkSuperAdmin, isAdminOrAbove as checkAdminOrAbove } from "@/lib/auth";
+import { formatDateTime } from "@/lib/format-time";
 
 type SidebarTab = "chats" | "cron";
 
@@ -138,15 +139,6 @@ export function ChatLayout({
     return groups.filter(g => g.items.length > 0);
   })();
 
-  const formatCronDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-US", {
-        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -378,7 +370,7 @@ export function ChatLayout({
                             <p className="text-sm font-medium truncate">{run.job_name}</p>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <span className="text-[10px] text-muted-foreground">
-                                {formatCronDate(run.run_date)}
+                                {formatDateTime(run.run_date)}
                               </span>
                               <span className="text-[10px] text-muted-foreground">·</span>
                               <span className="text-[10px] text-muted-foreground truncate">
@@ -386,9 +378,9 @@ export function ChatLayout({
                               </span>
                               <span className={cn(
                                 "text-[10px] px-1.5 rounded-full",
-                                run.status === "completed"
+                                run.status.toLowerCase() === "completed"
                                   ? "bg-green-500/10 text-green-600"
-                                  : run.status === "failed"
+                                  : run.status.toLowerCase() === "failed"
                                     ? "bg-red-500/10 text-red-600"
                                     : "bg-yellow-500/10 text-yellow-600"
                               )}>

@@ -20,8 +20,8 @@ function mapJob(r: ScheduledJobApiResponse): ScheduledJob {
     workflowId: r.workflow_id,
     workflowTitle: r.workflow_title,
     scheduleTime: r.schedule_time,
-    nextRun: r.next_run,
-    lastRun: r.last_run,
+    nextRun: r.next_run ?? null,
+    lastRun: r.last_run ?? null,
     status: r.status as JobStatus,
     notify: r.notify,
     enabled: r.enabled,
@@ -50,7 +50,7 @@ function mapJob(r: ScheduledJobApiResponse): ScheduledJob {
 function mapHistory(r: JobHistoryApiResponse): HistoryEntry {
   return {
     id: r.id,
-    runDate: r.run_date,
+    runDate: r.run_date ?? null,
     status: r.status,
     duration: r.duration,
     workflow: r.workflow,

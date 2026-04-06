@@ -30,6 +30,7 @@ import { useWorkflows } from "@/hooks/use-workflows";
 import { useScheduledJobs, useJobHistory, useCreateJob, useUpdateJob, useDeleteJob, useToggleJob, formToPayload } from "@/hooks/use-scheduler";
 import { useToast } from "@/hooks/use-toast";
 import { Pagination } from "@/components/ui/Pagination";
+import { formatRelativeTime, formatDateTime } from "@/lib/format-time";
 
 const SCHEDULER_PAGE_SIZE = 10;
 
@@ -220,7 +221,7 @@ export default function SchedulingPage() {
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={entry.status} />
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{entry.runDate}</p>
+                        <p className="text-sm font-semibold text-foreground">{formatDateTime(entry.runDate)}</p>
                         <p className="text-xs text-muted-foreground">Duration: {entry.duration}</p>
                       </div>
                     </div>
@@ -253,7 +254,7 @@ export default function SchedulingPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                Report Preview — {previewEntry?.runDate}
+                Report Preview — {formatDateTime(previewEntry?.runDate)}
               </DialogTitle>
             </DialogHeader>
             {previewEntry && (
@@ -406,11 +407,11 @@ export default function SchedulingPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-3.5 h-3.5" /> {job.scheduleTime}
+                        <Clock className="w-3.5 h-3.5" /> {job.type === "One-time" ? formatDateTime(job.scheduleTime) : job.scheduleTime}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-muted-foreground">{job.nextRun}</td>
-                    <td className="px-5 py-4 text-sm text-muted-foreground">{job.lastRun}</td>
+                    <td className="px-5 py-4 text-sm text-muted-foreground">{formatRelativeTime(job.nextRun)}</td>
+                    <td className="px-5 py-4 text-sm text-muted-foreground">{formatRelativeTime(job.lastRun)}</td>
                     <td className="px-5 py-4">
                       <span className="text-sm font-semibold text-foreground">{job.jobsDone}</span>
                     </td>
@@ -671,7 +672,7 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
                       </div>
                     )}
 
-                    {selectedPreset !== "everyminute" && (
+                    {!["every5min", "every10min", "every30min"].includes(selectedPreset) && (
                       <div className="space-y-2">
                         <Label>Time</Label>
                         <div className="flex items-center gap-2">
@@ -705,9 +706,9 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
                       </div>
                     )}
 
-                    {selectedPreset === "everyminute" && (
+                    {["every5min", "every10min", "every30min"].includes(selectedPreset) && (
                       <div className="rounded-md border border-border bg-muted/50 p-3">
-                        <p className="text-xs text-muted-foreground">Time selection is not available for "Every Minute" frequency.</p>
+                        <p className="text-xs text-muted-foreground">Time selection is not needed for interval-based frequencies.</p>
                       </div>
                     )}
 

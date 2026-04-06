@@ -318,8 +318,8 @@ export interface ScheduledJobApiResponse {
   workflow_id: string;
   workflow_title: string;
   schedule_time: string;
-  next_run: string;
-  last_run: string;
+  next_run: string | null;
+  last_run: string | null;
   status: string;
   notify: boolean;
   enabled: boolean;
@@ -340,7 +340,7 @@ export interface ScheduledJobApiResponse {
 
 export interface JobHistoryApiResponse {
   id: string;
-  run_date: string;
+  run_date: string | null;
   status: string;
   duration: string;
   workflow: string;
@@ -429,7 +429,7 @@ export const schedulerApi = {
 export interface RecentRunApiResponse {
   id: string;
   job_name: string;
-  run_date: string;
+  run_date: string | null;
   workflow: string;
   status: string;
   report_markdown: string | null;

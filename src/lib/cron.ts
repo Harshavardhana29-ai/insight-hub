@@ -5,7 +5,9 @@ export interface CronPreset {
 }
 
 export const CRON_PRESETS: CronPreset[] = [
-  { label: 'Every Minute', expression: '* * * * *', key: 'everyminute' },
+  { label: 'Every 5 Min', expression: '*/5 * * * *', key: 'every5min' },
+  { label: 'Every 10 Min', expression: '*/10 * * * *', key: 'every10min' },
+  { label: 'Every 30 Min', expression: '*/30 * * * *', key: 'every30min' },
   { label: 'Every Hour', expression: '0 * * * *', key: 'everyhour' },
   { label: 'Every Day', expression: '0 0 * * *', key: 'everyday' },
   { label: 'Every Week', expression: '0 0 * * 1', key: 'everyweek' },
@@ -52,7 +54,7 @@ export function validateCronExpression(expr: string): { valid: boolean; errors: 
 
   const errors: string[] = [];
   parts.forEach((part, i) => {
-    if (!/^[\d,\-\*\/]+$/.test(part)) {
+    if (!/^[\d,\-*/]+$/.test(part)) {
       errors.push(`Invalid characters in ${ranges[i].name}`);
     }
   });
@@ -67,6 +69,10 @@ export function cronToHuman(expr: string): string {
   const [min, hour, dom, mon, dow] = parts;
 
   if (min === '*' && hour === '*') return 'Every minute';
+  if (min.startsWith('*/') && hour === '*') {
+    const interval = min.slice(2);
+    return `Every ${interval} minutes`;
+  }
   if (min !== '*' && hour === '*') return `Every hour at minute ${min}`;
   if (hour !== '*' && min !== '*' && dom === '*' && mon === '*' && dow === '*')
     return `Daily at ${hour.padStart(2, '0')}:${min.padStart(2, '0')}`;
@@ -76,6 +82,15 @@ export function cronToHuman(expr: string): string {
     return `Monthly on day ${dom} at ${hour.padStart(2,'0')}:${min.padStart(2,'0')}`;
 
   return expr;
+}
+
+function matchesCronField(expr: string, value: number): boolean {
+  if (expr === '*') return true;
+  if (expr.startsWith('*/')) {
+    const interval = parseInt(expr.slice(2));
+    return interval > 0 && value % interval === 0;
+  }
+  return expr.split(',').some(v => parseInt(v) === value);
 }
 
 export function getNextExecutions(expr: string, count: number): Date[] {
@@ -97,12 +112,8 @@ export function getNextExecutions(expr: string, count: number): Date[] {
     const d = check.getDate();
     const w = check.getDay();
 
-    const minMatch = minExpr === '*' || minExpr.split(',').some(v => parseInt(v) === m);
-    const hourMatch = hourExpr === '*' || hourExpr.split(',').some(v => parseInt(v) === h);
-    const domMatch = domExpr === '*' || domExpr.split(',').some(v => parseInt(v) === d);
-    const dowMatch = dowExpr === '*' || dowExpr.split(',').some(v => parseInt(v) === w);
-
-    if (minMatch && hourMatch && domMatch && dowMatch) {
+    if (matchesCronField(minExpr, m) && matchesCronField(hourExpr, h) &&
+        matchesCronField(domExpr, d) && matchesCronField(dowExpr, w)) {
       results.push(new Date(check));
     }
     check.setMinutes(check.getMinutes() + 1);
@@ -113,8 +124,12 @@ export function getNextExecutions(expr: string, count: number): Date[] {
 
 export function buildCron(preset: string, minute: string, hour: string, dayOfWeek: string, dayOfMonth: string): string {
   switch (preset) {
-    case 'everyminute':
-      return '* * * * *';
+    case 'every5min':
+      return '*/5 * * * *';
+    case 'every10min':
+      return '*/10 * * * *';
+    case 'every30min':
+      return '*/30 * * * *';
     case 'everyhour':
       return `${parseInt(minute)} * * * *`;
     case 'everyday':
