@@ -10,6 +10,13 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      // AI Maturity sub-app API proxy (temporary — remove to decouple)
+      "/ai-maturity/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()].filter(Boolean),
   resolve: {

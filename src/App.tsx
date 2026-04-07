@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,6 +14,9 @@ import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import RestrictedAccessPage from "@/pages/RestrictedAccessPage";
 import { useCreateChatSession, useDeleteChatSession, useChatSession } from "@/hooks/use-chat";
 import { useRecentSchedulerRuns } from "@/hooks/use-scheduler";
+
+// AI Maturity sub-app (temporary — remove this import and the route to decouple)
+const AiMaturityRoot = lazy(() => import("@/ai-maturity/index"));
 
 const queryClient = new QueryClient();
 
@@ -134,6 +137,15 @@ function AppContent() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      {/* AI Maturity sub-app (temporary — remove this route to decouple) */}
+      <Route
+        path="/ai-maturity/*"
+        element={
+          <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+            <AiMaturityRoot />
+          </Suspense>
+        }
+      />
       {/* Protected routes */}
       <Route
         path="/*"
