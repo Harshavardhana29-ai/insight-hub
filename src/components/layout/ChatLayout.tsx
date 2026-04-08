@@ -172,7 +172,7 @@ export function ChatLayout({
             {/* Sidebar Header */}
             <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
+                <div className="h-6 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
                   <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
@@ -420,9 +420,8 @@ export function ChatLayout({
                 <DropdownMenuContent align="start" side="top" className="w-56">
                   <div className="px-3 py-2 border-b border-border">
                     <p className="text-sm font-semibold text-foreground">{user?.display_name || "User"}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
+                    <p className="text-xs text-muted-foreground">{`${user?.ntid}@bosch.com` || ""}</p>
                   </div>
-                  <DropdownMenuItem><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}><LogOut className="w-4 h-4 mr-2" /> Log out</DropdownMenuItem>
                 </DropdownMenuContent>

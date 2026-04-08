@@ -22,6 +22,7 @@ import type { WorkflowResponse, AgentResponse } from "@/lib/api";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
 import { Pagination } from "@/components/ui/pagination";
 
+
 const PAGE_SIZE = 10;
 
 const topicGradient: Record<string, string> = {
@@ -92,14 +93,12 @@ function SearchableDropdown({
             <button
               key={opt.id}
               onClick={() => { onToggle(opt.id); if (!multiple) setOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2 first:rounded-t-xl last:rounded-b-xl ${
-                selected.includes(opt.id) ? "bg-accent/60" : ""
-              }`}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2 first:rounded-t-xl last:rounded-b-xl ${selected.includes(opt.id) ? "bg-accent/60" : ""
+                }`}
             >
               {multiple && (
-                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                  selected.includes(opt.id) ? "bg-primary border-primary" : "border-border"
-                }`}>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.includes(opt.id) ? "bg-primary border-primary" : "border-border"
+                  }`}>
                   {selected.includes(opt.id) && <span className="text-primary-foreground text-[10px] font-bold">✓</span>}
                 </div>
               )}
@@ -193,6 +192,7 @@ export default function WorkflowPage() {
   const [selectedSourceTopics, setSelectedSourceTopics] = useState<string[]>([]);
   const [selectedIndividualSources, setSelectedIndividualSources] = useState<string[]>([]);
   const [individualTopicFilter, setIndividualTopicFilter] = useState<string>("all");
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
 
   const isEdit = !!editingWorkflow;
 
@@ -219,9 +219,9 @@ export default function WorkflowPage() {
 
   const availableAgents = useMemo(() => {
     if (sourceSelectionMode === "prompt_only") {
-      return (allAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name }));
+      return (allAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name, description: a.description, api_url: a.api_url }));
     }
-    return (availableAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name }));
+    return (availableAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name, description: a.description, api_url: a.api_url }));
   }, [sourceSelectionMode, availableAgentsFromApi, allAgentsFromApi]);
 
   // Filter individual sources by topic filter
@@ -265,6 +265,7 @@ export default function WorkflowPage() {
     setSelectedIndividualSources([]);
     setEditingWorkflow(null);
     setIndividualTopicFilter("all");
+    setActiveAgentId(null);
   };
 
   const openCreate = () => {
@@ -392,22 +393,20 @@ export default function WorkflowPage() {
           <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
             <button
               onClick={() => setActiveTab("mine")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "mine"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "mine"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               <GitBranch className="w-3.5 h-3.5" />
               My Workflows
             </button>
             <button
               onClick={() => setActiveTab("public")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "public"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "public"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               <GlobeLock className="w-3.5 h-3.5" />
               Public Workflows
@@ -460,11 +459,10 @@ export default function WorkflowPage() {
             <button
               key={t}
               onClick={() => { setSelectedTopic(t); setPage(1); }}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                selectedTopic === t
-                  ? "gradient-blue text-primary-foreground shadow-colored"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
-              }`}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${selectedTopic === t
+                ? "gradient-blue text-primary-foreground shadow-colored"
+                : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                }`}
             >
               {t === "all" ? "All" : t}
             </button>
@@ -618,11 +616,10 @@ export default function WorkflowPage() {
                   <button
                     key={mode.key}
                     onClick={() => setSourceSelectionMode(mode.key)}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      sourceSelectionMode === mode.key
-                        ? (isEdit ? "gradient-blue-dark" : "gradient-blue") + " text-primary-foreground shadow-sm"
-                        : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${sourceSelectionMode === mode.key
+                      ? (isEdit ? "gradient-blue-dark" : "gradient-blue") + " text-primary-foreground shadow-sm"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                      }`}
                   >
                     {mode.label}
                   </button>
@@ -739,18 +736,69 @@ export default function WorkflowPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableAgents.map((agent) => (
-                  <button
-                    key={agent.id}
-                    onClick={() => toggleAgent(agent.name, agent.id)}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all border ${
-                      selectedAgents.includes(agent.name)
-                        ? "gradient-blue text-primary-foreground border-transparent shadow-sm"
-                        : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
-                    }`}
-                  >
-                    <Bot className="w-3.5 h-3.5" />
-                    {agent.name}
-                  </button>
+                  <div key={agent.id} className="relative">
+                    {/* Info card — shown on hover (desktop) or first tap (mobile) */}
+                    {activeAgentId === agent.id && (
+                      <div className="absolute bottom-full left-0 mb-2 w-56 z-50 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl pointer-events-none animate-in fade-in-0 zoom-in-95">
+                        <div className="px-3.5 py-2.5 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10 shrink-0">
+                              <Bot className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                            <span className="font-semibold text-sm text-foreground leading-tight">{agent.name}</span>
+                          </div>
+                          {agent.description && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
+                          )}
+                          <div className="flex items-center gap-1.5 pt-0.5">
+                            {agent.api_url ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                                Connected
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 inline-block" />
+                                No endpoint
+                              </span>
+                            )}
+                          </div>
+                          {/* Mobile hint */}
+                          <p className="text-[10px] text-primary/70 font-medium sm:hidden">Tap again to select</p>
+                        </div>
+                        {/* Arrow */}
+                        <div className="absolute top-full left-4 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-border" />
+                        <div className="absolute top-full left-4 mt-[-1px] w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-popover" />
+                      </div>
+                    )}
+                    <button
+                      onMouseEnter={() => setActiveAgentId(agent.id)}
+                      onMouseLeave={() => setActiveAgentId(null)}
+                      onClick={(e) => {
+                        const isTouch = (e.nativeEvent as PointerEvent).pointerType === "touch";
+                        if (isTouch) {
+                          // Mobile: first tap shows info, second tap selects
+                          if (activeAgentId === agent.id) {
+                            toggleAgent(agent.name, agent.id);
+                            setActiveAgentId(null);
+                          } else {
+                            setActiveAgentId(agent.id);
+                          }
+                        } else {
+                          // Desktop: click always selects (hover shows info)
+                          toggleAgent(agent.name, agent.id);
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-all border ${
+                        selectedAgents.includes(agent.name)
+                          ? "gradient-blue text-primary-foreground border-transparent shadow-sm"
+                          : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
+                      }`}
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      {agent.name}
+                    </button>
+                  </div>
                 ))}
                 {availableAgents.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">

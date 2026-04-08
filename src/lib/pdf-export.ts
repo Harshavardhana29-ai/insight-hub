@@ -922,8 +922,9 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   document.body.appendChild(el);
 
   try {
+    const CANVAS_SCALE = 2.5;
     const canvas = await html2canvas(el, {
-      scale: 2.5,
+      scale: CANVAS_SCALE,
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,
@@ -934,15 +935,33 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
     const canvasH = canvas.height;
     const mmPerPx = CW / canvasW;
 
+    // Collect all links from the rendered DOM before we remove it.
+    // getBoundingClientRect() gives positions relative to the viewport;
+    // el is fixed to top:0/left:-20000px so we offset by el's own rect.
+    const elRect = el.getBoundingClientRect();
+    interface LinkInfo { href: string; x: number; y: number; w: number; h: number; }
+    const links: LinkInfo[] = [];
+    el.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((a) => {
+      const r = a.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const href = a.href;
+      if (!href || href.startsWith("javascript")) return;
+      // Convert DOM px → canvas px (accounting for scale)
+      links.push({
+        href,
+        x: (r.left - elRect.left) * CANVAS_SCALE,
+        y: (r.top  - elRect.top)  * CANVAS_SCALE,
+        w: r.width  * CANVAS_SCALE,
+        h: r.height * CANVAS_SCALE,
+      });
+    });
+
     // Usable content area per page (top strip 1.5mm + margin + footer 20mm)
     const topStart = M + 2;
     const contentAreaH = PH - topStart - 22;
     const pxPerPage = Math.floor(contentAreaH / mmPerPx);
 
     // ── Smart page-break: find safe cut points (whitespace rows) ──
-    // Scan pixel rows to detect "safe" break points — rows that are
-    // entirely white (or near-white), indicating gaps between paragraphs
-    // / sections rather than the middle of a text line.
     const tmpCanvas = document.createElement("canvas");
     tmpCanvas.width = canvasW;
     tmpCanvas.height = 1;
@@ -953,43 +972,32 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
       tmpCtx.drawImage(canvas, 0, y, canvasW, 1, 0, 0, canvasW, 1);
       const data = tmpCtx.getImageData(0, 0, canvasW, 1).data;
       for (let x = 0; x < canvasW * 4; x += 4) {
-        // Check if pixel is near-white (all channels > 250)
         if (data[x] < 250 || data[x + 1] < 250 || data[x + 2] < 250) return false;
       }
       return true;
     }
 
     // Build page break points
-    const breakPoints: number[] = [0]; // start of first slice
+    const breakPoints: number[] = [0];
     let cursor = 0;
     while (cursor < canvasH) {
-      let idealEnd = cursor + pxPerPage;
-      if (idealEnd >= canvasH) {
-        // Last page — no need to find a break
-        break;
-      }
-      // Search backwards from idealEnd to find a whitespace row
-      // Look within the last 15% of the page height for a safe break
+      const idealEnd = cursor + pxPerPage;
+      if (idealEnd >= canvasH) break;
       const searchStart = idealEnd;
       const searchEnd = Math.max(cursor + Math.floor(pxPerPage * 0.85), cursor + 50);
-      let bestBreak = idealEnd; // fallback: hard break at pixel boundary
+      let bestBreak = idealEnd;
       for (let y = searchStart; y >= searchEnd; y--) {
-        if (isRowWhitespace(y)) {
-          bestBreak = y;
-          break;
-        }
+        if (isRowWhitespace(y)) { bestBreak = y; break; }
       }
       breakPoints.push(bestBreak);
       cursor = bestBreak;
     }
-    breakPoints.push(canvasH); // end sentinel
+    breakPoints.push(canvasH);
 
     const pagesNeeded = breakPoints.length - 1;
 
     for (let p = 0; p < pagesNeeded; p++) {
       pdf.addPage();
-
-      // Thin Bosch supergraphic strip
       drawBoschStrip(0, 1.5);
 
       const srcY = breakPoints[p];
@@ -1006,6 +1014,27 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
 
       const sliceH = srcH * mmPerPx;
       pdf.addImage(slice.toDataURL("image/png"), "PNG", M, topStart, CW, sliceH);
+
+      // ── Overlay clickable link annotations for this page slice ──
+      for (const link of links) {
+        // Link's canvas-px y range that falls within this slice
+        const linkTop    = link.y - srcY;
+        const linkBottom = link.y + link.h - srcY;
+        if (linkBottom <= 0 || linkTop >= srcH) continue;
+
+        // Clamp to slice bounds
+        const clampedTop    = Math.max(linkTop, 0);
+        const clampedBottom = Math.min(linkBottom, srcH);
+        if (clampedBottom <= clampedTop) continue;
+
+        // Convert canvas-px → mm on this PDF page
+        const xMm = M + link.x * mmPerPx;
+        const yMm = topStart + clampedTop * mmPerPx;
+        const wMm = link.w * mmPerPx;
+        const hMm = (clampedBottom - clampedTop) * mmPerPx;
+
+        pdf.link(xMm, yMm, wMm, hMm, { url: link.href });
+      }
     }
   } finally {
     document.body.removeChild(el);

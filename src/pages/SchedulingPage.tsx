@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, Play, Pause, Edit, Calendar, Clock, ArrowLeft, Download,
@@ -29,6 +29,8 @@ import type {
 import { useWorkflows } from "@/hooks/use-workflows";
 import { useScheduledJobs, useJobHistory, useCreateJob, useUpdateJob, useDeleteJob, useToggleJob, formToPayload } from "@/hooks/use-scheduler";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { usersApi } from "@/lib/api";
 import { Pagination } from "@/components/ui/pagination";
 import { formatRelativeTime, formatDateTime } from "@/lib/format-time";
 
@@ -68,11 +70,6 @@ function renderMarkdown(md: string): string {
     ;
 }
 
-const MOCK_USER = {
-  name: "",
-  email: "",
-};
-
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
   active: { label: "Active", className: "bg-bosch-green text-primary-foreground" },
   running: { label: "Running", className: "bg-bosch-yellow text-foreground" },
@@ -103,11 +100,11 @@ const DELAY_OPTIONS = [
 const initialForm: CreateJobFormData = {
   name: "", userPrompt: "", workflowId: "", enabled: true,
   scheduleType: "recurring", cronExpression: "0 * * * *", oneTimeDate: "", timezone: "UTC",
-  executionContext: { wakeMode: "next-heartbeat" },
+  executionContext: { wakeMode: "immediate" },
   outputBehavior: {
     expectedOutputFormat: "markdown", outputSchema: "",
     deliveryMethods: ["internal-log"], storeStdout: true, storeStderr: true,
-    retentionDays: 30, maxSizeKb: 10240, outlookEmail: MOCK_USER.email, teamsWebhook: MOCK_USER.email,
+    retentionDays: 30, maxSizeKb: 10240, outlookEmail: "", teamsWebhook: "",
   },
   failureBehavior: {
     concurrency: "skip",
@@ -119,8 +116,19 @@ const initialForm: CreateJobFormData = {
 // ─── Main Component ──────────────────────────────────────────
 export default function SchedulingPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: workflowsData } = useWorkflows();
   const workflowsList = useMemo(() => (workflowsData?.items ?? []).map(w => ({ id: w.id, title: w.title })), [workflowsData]);
+
+  // Resolve effective email: for assistants, fetch admin's email
+  const [effectiveEmail, setEffectiveEmail] = useState(user?.email ?? "");
+  useEffect(() => {
+    if (user?.role === "assistant" && user.admin_id) {
+      usersApi.get(user.admin_id).then(admin => setEffectiveEmail(admin.email)).catch(() => {});
+    } else if (user?.email) {
+      setEffectiveEmail(user.email);
+    }
+  }, [user]);
 
   const [historyJobId, setHistoryJobId] = useState<string | null>(null);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
@@ -306,16 +314,16 @@ export default function SchedulingPage() {
         outputSchema: editJob.outputSchema || "",
         deliveryMethods: editJob.deliveryMethods || ["internal-log"],
         storeStdout: true, storeStderr: true, retentionDays: 30, maxSizeKb: 10240,
-        outlookEmail: MOCK_USER.email, teamsWebhook: MOCK_USER.email,
+        outlookEmail: effectiveEmail, teamsWebhook: effectiveEmail,
       },
       failureBehavior: editJob.failureBehavior || initialForm.failureBehavior,
     };
-    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit workflows={workflowsList} />;
+    return <CreateScheduleWizard onSave={handleEditSave} onCancel={() => setEditJob(null)} initialData={editInitialForm} isEdit workflows={workflowsList} effectiveEmail={effectiveEmail} />;
   }
 
   // ─── Create Wizard View ──────────────────────────────────
   if (showCreateWizard) {
-    return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} workflows={workflowsList} />;
+    return <CreateScheduleWizard onSave={handleSaveJob} onCancel={() => setShowCreateWizard(false)} workflows={workflowsList} effectiveEmail={effectiveEmail} />;
   }
 
   // ─── List View ───────────────────────────────────────────
@@ -477,9 +485,19 @@ export default function SchedulingPage() {
 }
 
 // ─── Create/Edit Schedule Wizard ──────────────────────────────────
-function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean; workflows: Array<{ id: string; title: string }> }) {
+function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows, effectiveEmail = "" }: { onSave: (form: CreateJobFormData) => void; onCancel: () => void; initialData?: CreateJobFormData; isEdit?: boolean; workflows: Array<{ id: string; title: string }>; effectiveEmail?: string }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<CreateJobFormData>(initialData || initialForm);
+
+  // Keep outlook/teams email in sync with effective email
+  useEffect(() => {
+    if (effectiveEmail) {
+      setForm(prev => ({
+        ...prev,
+        outputBehavior: { ...prev.outputBehavior, outlookEmail: effectiveEmail, teamsWebhook: effectiveEmail },
+      }));
+    }
+  }, [effectiveEmail]);
 
   const update = <K extends keyof CreateJobFormData>(key: K, value: CreateJobFormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -561,8 +579,8 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 i === step ? "gradient-blue text-primary-foreground shadow-colored" :
-                i < step ? "bg-bosch-green/10 text-bosch-green" :
-                "bg-muted text-muted-foreground"
+                  i < step ? "bg-bosch-green/10 text-bosch-green" :
+                    "bg-muted text-muted-foreground"
               )}
             >
               {i < step ? <Check className="w-3 h-3" /> : <s.icon className="w-3 h-3" />}
@@ -746,13 +764,6 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
               <div className="space-y-3">
                 <Label>Wake Mode</Label>
                 <RadioGroup value={form.executionContext.wakeMode} onValueChange={(v) => updateCtx({ wakeMode: v as WakeMode })}>
-                  <div className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", form.executionContext.wakeMode === "next-heartbeat" ? "border-primary bg-accent/50" : "border-border hover:border-primary/30")} onClick={() => updateCtx({ wakeMode: "next-heartbeat" })}>
-                    <RadioGroupItem value="next-heartbeat" id="wake-hb" className="mt-0.5" />
-                    <div>
-                      <Label htmlFor="wake-hb" className="cursor-pointer font-semibold">Next Heartbeat</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Job queued and picked up on the agent's next heartbeat cycle. Lower resource impact.</p>
-                    </div>
-                  </div>
                   <div className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", form.executionContext.wakeMode === "immediate" ? "border-primary bg-accent/50" : "border-border hover:border-primary/30")} onClick={() => updateCtx({ wakeMode: "immediate" })}>
                     <RadioGroupItem value="immediate" id="wake-imm" className="mt-0.5" />
                     <div>
@@ -760,6 +771,14 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
                       <p className="text-xs text-muted-foreground mt-0.5">Agent wakes immediately to execute. Use for time-critical tasks.</p>
                     </div>
                   </div>
+                  <div className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", form.executionContext.wakeMode === "next-heartbeat" ? "border-primary bg-accent/50" : "border-border hover:border-primary/30")} onClick={() => updateCtx({ wakeMode: "next-heartbeat" })}>
+                    <RadioGroupItem value="next-heartbeat" id="wake-hb" className="mt-0.5" />
+                    <div>
+                      <Label htmlFor="wake-hb" className="cursor-pointer font-semibold">Next Heartbeat</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Job queued and picked up on the agent's next heartbeat cycle. Lower resource impact.</p>
+                    </div>
+                  </div>
+
                 </RadioGroup>
               </div>
             )}
@@ -819,14 +838,14 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
                 {form.outputBehavior.deliveryMethods.includes("outlook") && (
                   <div className="space-y-2">
                     <Label>Outlook Email</Label>
-                    <Input value={MOCK_USER.email} disabled className="bg-muted/50 cursor-not-allowed" />
+                    <Input value={effectiveEmail} disabled className="bg-muted/50 cursor-not-allowed" />
                     <p className="text-[11px] text-muted-foreground">Auto-filled from your profile</p>
                   </div>
                 )}
                 {form.outputBehavior.deliveryMethods.includes("teams") && (
                   <div className="space-y-2">
                     <Label>Teams Email</Label>
-                    <Input value={MOCK_USER.email} disabled className="bg-muted/50 cursor-not-allowed" />
+                    <Input value={effectiveEmail} disabled className="bg-muted/50 cursor-not-allowed" />
                     <p className="text-[11px] text-muted-foreground">Auto-filled from your profile</p>
                   </div>
                 )}
@@ -891,22 +910,30 @@ function CreateScheduleWizard({ onSave, onCancel, initialData, isEdit, workflows
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { title: "Identity", items: [
-                      { k: "Name", v: form.name || "—" },
-                      { k: "Workflow", v: workflows.find(w => w.id === form.workflowId)?.title || "—" },
-                      { k: "Enabled", v: form.enabled ? "Yes" : "No" },
-                    ]},
-                    { title: "Schedule", items: [
-                      { k: "", v: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression) : `One-time: ${form.oneTimeDate}` },
-                      { k: "Timezone", v: form.timezone },
-                    ]},
-                    { title: "Execution", items: [
-                      { k: "Wake", v: form.executionContext.wakeMode.replace("-", " ") },
-                    ]},
-                    { title: "Output", items: [
-                      { k: "Format", v: form.outputBehavior.expectedOutputFormat },
-                      { k: "Delivery", v: form.outputBehavior.deliveryMethods.join(", ") },
-                    ]},
+                    {
+                      title: "Identity", items: [
+                        { k: "Name", v: form.name || "—" },
+                        { k: "Workflow", v: workflows.find(w => w.id === form.workflowId)?.title || "—" },
+                        { k: "Enabled", v: form.enabled ? "Yes" : "No" },
+                      ]
+                    },
+                    {
+                      title: "Schedule", items: [
+                        { k: "", v: form.scheduleType === "recurring" ? cronToHuman(form.cronExpression) : `One-time: ${form.oneTimeDate}` },
+                        { k: "Timezone", v: form.timezone },
+                      ]
+                    },
+                    {
+                      title: "Execution", items: [
+                        { k: "Wake", v: form.executionContext.wakeMode.replace("-", " ") },
+                      ]
+                    },
+                    {
+                      title: "Output", items: [
+                        { k: "Format", v: form.outputBehavior.expectedOutputFormat },
+                        { k: "Delivery", v: form.outputBehavior.deliveryMethods.join(", ") },
+                      ]
+                    },
                   ].map((section) => (
                     <div key={section.title} className="p-4 rounded-md bg-accent/30 border border-border">
                       <h4 className="text-sm font-bold text-foreground mb-2">{section.title}</h4>
