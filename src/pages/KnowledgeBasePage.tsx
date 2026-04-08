@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Search, Plus, Globe, Filter, Trash2, Clock,
-  Database, Tag, X, Loader2, Pencil, Download, GlobeLock,
+  Database, Tag, X, Loader2, Pencil, Download, GlobeLock, Check,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -73,6 +73,15 @@ export default function KnowledgeBasePage() {
   const sources = activeTab === "public"
     ? (publicSourcesData?.items ?? [])
     : (sourcesData?.items ?? []);
+
+  // Set of URLs the user already has (to detect synced sources)
+  const mySyncedUrls = useMemo(() => {
+    const urls = new Set<string>();
+    (sourcesData?.items ?? []).forEach(s => { if (s.url) urls.add(s.url); });
+    return urls;
+  }, [sourcesData]);
+
+  const isSourceSynced = (source: DataSourceResponse) => mySyncedUrls.has(source.url);
 
   const handleDelete = async (id: string) => {
     try {
@@ -258,16 +267,22 @@ export default function KnowledgeBasePage() {
                           </span>
                         )}
                         {activeTab === "public" ? (
-                          <button
-                            onClick={() => syncMutation.mutate(source.id)}
-                            disabled={syncMutation.isPending}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
-                            style={{ backgroundColor: boschBlue[50] }}
-                            title="Sync to my collection"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Sync
-                          </button>
+                          isSourceSynced(source) ? (
+                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
+                              <Check className="w-3.5 h-3.5" /> Synced
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => syncMutation.mutate(source.id)}
+                              disabled={syncMutation.isPending}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                              style={{ backgroundColor: boschBlue[50] }}
+                              title="Sync to my collection"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Sync
+                            </button>
+                          )
                         ) : (
                           <>
                             <button

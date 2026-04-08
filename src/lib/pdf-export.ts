@@ -762,10 +762,9 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   const CW = PW - 2 * M;
   const ts = formatTimestamp();
 
-  // Load logos and Bosch supergraphic strip
-  const [logo, logo2, boschStrip] = await Promise.all([
-    loadImageInfo("/image.png"),
-    loadImageInfo("/bosch-alt.png"),
+  // Load Tarka logo and Bosch supergraphic strip
+  const [logo, boschStrip] = await Promise.all([
+    loadImageInfo("/image1.png"),
     loadImageInfo("/bosch-rainbow.svg"),
   ]);
 
@@ -804,25 +803,18 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   // Top Bosch supergraphic strip
   drawBoschStrip(0, 2);
 
-  // ── Calculate logo dimensions (both logos side by side) ──
-  const maxLogoH = 22; // max height for each logo in mm
-  const logoGap = 6;  // gap between the two logos
+  // ── Calculate Tarka logo dimensions (620×300 → 2.07:1 ratio) ──
+  const maxLogoH = 18; // height in mm
 
   let logo1W = 0, logo1H = 0;
   if (logo) {
-    const a1 = logo.w / logo.h;
+    const a1 = logo.w / logo.h; // ~2.07
     logo1H = maxLogoH;
     logo1W = logo1H * a1;
   }
-  let logo2W = 0, logo2H = 0;
-  if (logo2) {
-    const a2 = logo2.w / logo2.h;
-    logo2H = maxLogoH;
-    logo2W = logo2H * a2;
-  }
 
-  const logosPresent = !!(logo || logo2);
-  const totalLogosW = logo1W + logo2W + (logo && logo2 ? logoGap : 0);
+  const logosPresent = !!logo;
+  const totalLogosW = logo1W;
   const logosBlockH = logosPresent ? maxLogoH + 10 : 0;
 
   // ── Calculate other block heights ──
@@ -852,17 +844,10 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   const usableBottom = PH - 18;
   let cy = usableTop + (usableBottom - usableTop - totalBlockH) / 2;
 
-  // ── Logos (side by side, centered) ──
-  if (logosPresent) {
-    const logosStartX = PW / 2 - totalLogosW / 2;
-    let lx = logosStartX;
-    if (logo) {
-      pdf.addImage(logo.dataUrl, "PNG", lx, cy + (maxLogoH - logo1H) / 2, logo1W, logo1H);
-      lx += logo1W + logoGap;
-    }
-    if (logo2) {
-      pdf.addImage(logo2.dataUrl, "PNG", lx, cy + (maxLogoH - logo2H) / 2, logo2W, logo2H);
-    }
+  // ── Tarka logo (centered) ──
+  if (logosPresent && logo) {
+    const logoX = PW / 2 - totalLogosW / 2;
+    pdf.addImage(logo.dataUrl, "PNG", logoX, cy, logo1W, logo1H);
     cy += logosBlockH;
   }
 
@@ -899,7 +884,7 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
   pdf.setTextColor(...hexToRgb(boschBlue[50]));
-  pdf.text("Powered by BGSW/BDO", PW / 2, cy, { align: "center" });
+  pdf.text("Powered by BGSW/BDO & BUD", PW / 2, cy, { align: "center" });
 
   // ── Footer area on cover page ──
   // Separator line above footer
@@ -1059,29 +1044,18 @@ export async function generateWordReport(opts: ExportOptions): Promise<void> {
   const html = renderHtmlForWordExport(opts.reportMarkdown);
   const ts = formatTimestamp();
 
-  // Load both logos (same as PDF cover page)
+  // Load Tarka logo
   let logoHtml = "";
   try {
-    const [logo1, logo2] = await Promise.all([
-      loadImageInfo("/image.png"),
-      loadImageInfo("/bosch-alt.png"),
-    ]);
-    if (logo1 || logo2) {
-      const imgs: string[] = [];
-      if (logo1) {
-        const h1 = 60;
-        const w1 = Math.round(h1 * (logo1.w / logo1.h));
-        imgs.push(`<img src="${logo1.dataUrl}" width="${w1}" height="${h1}" alt="Logo" style="vertical-align:middle;" />`);
-      }
-      if (logo2) {
-        const h2 = 60;
-        const w2 = Math.round(h2 * (logo2.w / logo2.h));
-        imgs.push(`<img src="${logo2.dataUrl}" width="${w2}" height="${h2}" alt="Bosch" style="vertical-align:middle;" />`);
-      }
-      logoHtml = `<p style="text-align:center;margin-top:40px;margin-bottom:10px;">${imgs.join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`;
+    const logo1 = await loadImageInfo("/image1.png");
+    if (logo1) {
+      // 620×300 → 2.07:1 ratio; render at height 60px → natural width
+      const h1 = 60;
+      const w1 = Math.round(h1 * (logo1.w / logo1.h));
+      logoHtml = `<p style="text-align:center;margin-top:40px;margin-bottom:10px;"><img src="${logo1.dataUrl}" width="${w1}" height="${h1}" alt="Tarka Logo" style="vertical-align:middle;" /></p>`;
     }
   } catch {
-    /* continue without logos */
+    /* continue without logo */
   }
 
   const docContent = `

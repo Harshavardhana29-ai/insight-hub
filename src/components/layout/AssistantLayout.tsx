@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Moon, Sun, LogOut, Database, GitBranch, Calendar, User,
-  ChevronDown,
+  ChevronDown, Download, Loader2, Check,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -14,6 +14,10 @@ import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowPage from "@/pages/WorkflowPage";
 import SchedulingPage from "@/pages/SchedulingPage";
 import { boschBlue } from "@/lib/bosch-colors";
+import { dataSourcesApi, workflowsApi } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { usersApi } from "@/lib/api";
 
 type AssistantTab = "knowledge" | "workflows" | "scheduler";
 
@@ -27,28 +31,108 @@ export function AssistantLayout() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<AssistantTab>("knowledge");
   const [darkMode, setDarkMode] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncDone, setSyncDone] = useState(false);
+  const [adminName, setAdminName] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
+
+  // Fetch admin name for assistants
+  useEffect(() => {
+    if (user?.admin_id) {
+      usersApi.get(user.admin_id).then(admin => setAdminName(admin.display_name)).catch(() => {});
+    }
+  }, [user?.admin_id]);
+
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    let syncedCount = 0;
+    let skippedCount = 0;
+    try {
+      const [publicSources, publicWorkflows] = await Promise.all([
+        dataSourcesApi.listPublic({}),
+        workflowsApi.listPublic(),
+      ]);
+
+      for (const source of publicSources.items) {
+        try {
+          await dataSourcesApi.syncPublic(source.id);
+          syncedCount++;
+        } catch {
+          skippedCount++;
+        }
+      }
+
+      for (const workflow of publicWorkflows.items) {
+        try {
+          await workflowsApi.syncPublic(workflow.id);
+          syncedCount++;
+        } catch {
+          skippedCount++;
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ["data-sources"] });
+      qc.invalidateQueries({ queryKey: ["data-sources-stats"] });
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      qc.invalidateQueries({ queryKey: ["workflow-stats"] });
+
+      if (syncedCount > 0) {
+        toast({ title: `Synced ${syncedCount} item(s) successfully${skippedCount > 0 ? ` (${skippedCount} already synced)` : ""}` });
+      } else {
+        toast({ title: "All sources and workflows are already synced" });
+        setSyncDone(true);
+      }
+      if (syncedCount === 0) setSyncDone(true);
+    } catch {
+      toast({ title: "Failed to sync", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen w-full bg-background">
       {/* Top Bar */}
       <header className="h-12 border-b border-border bg-background/80 backdrop-blur-sm shrink-0 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg overflow-hidden bg-primary flex items-center justify-center">
-            <img src="/image.png" alt="Logo" className="w-full h-full object-contain p-0.5 bg-white" />
+          <div className="h-8 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
+            <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
           </div>
           <div>
-            <p className="text-xs font-bold text-foreground leading-tight">Market Research Agentic Suite</p>
+            <p className="text-xs font-bold text-foreground leading-tight">Tarka</p>
             <p className="text-[10px] text-muted-foreground leading-tight">
-              Assistant — managing for {user?.display_name || "Admin"}
+              Functional OFE — managing for {adminName || user?.display_name || "Admin"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sync All Button */}
+          {!syncDone ? (
+            <button
+              onClick={handleSyncAll}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+              style={{ backgroundColor: boschBlue[50] }}
+              title="Sync all public data sources and workflows"
+            >
+              {syncing ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Syncing…</>
+              ) : (
+                <><Download className="w-3.5 h-3.5" /> Sync All</>
+              )}
+            </button>
+          ) : (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
+              <Check className="w-3.5 h-3.5" /> All Synced
+            </span>
+          )}
+
           {/* Tab Navigation */}
           <div className="flex gap-1 bg-muted rounded-lg p-0.5">
             {TABS.map((tab) => (
@@ -99,7 +183,7 @@ export function AssistantLayout() {
               <div className="px-3 py-2 border-b border-border">
                 <p className="text-sm font-semibold text-foreground">{user?.display_name}</p>
                 <p className="text-xs text-muted-foreground">{user?.ntid || user?.email}</p>
-                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{user?.role?.replace("_", " ")}</p>
+                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ")}</p>
               </div>
               <DropdownMenuItem><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
               <DropdownMenuSeparator />

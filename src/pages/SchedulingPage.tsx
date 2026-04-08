@@ -69,8 +69,8 @@ function renderMarkdown(md: string): string {
 }
 
 const MOCK_USER = {
-  name: "Krishna Prakash",
-  email: "krishna.prakash@bosch.com",
+  name: "",
+  email: "",
 };
 
 const statusConfig: Record<JobStatus, { label: string; className: string }> = {
@@ -329,7 +329,7 @@ export default function SchedulingPage() {
               <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Krishna's Scheduler</h2>
+              <h2 className="text-lg font-bold text-foreground">Scheduler</h2>
               <p className="text-sm text-muted-foreground">{jobs.filter((j) => j.enabled).length} active schedules</p>
             </div>
           </div>

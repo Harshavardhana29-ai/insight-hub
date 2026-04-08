@@ -270,7 +270,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
                 <Bot className="w-8 h-8 text-primary" />
               </div>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Market Research Assistant
+                Tarka
               </h1>
               <p className="text-muted-foreground text-sm md:text-base mb-8">
                 What do you want to know today?
@@ -562,7 +562,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-              Powered by BGSW/BDO · Market Research Agentic Suite
+              Powered by BGSW/BDO & BUD · Tarka
             </p>
           </div>
         </div>

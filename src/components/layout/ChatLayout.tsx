@@ -172,12 +172,12 @@ export function ChatLayout({
             {/* Sidebar Header */}
             <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg overflow-hidden bg-primary flex items-center justify-center">
-                  <img src="/image.png" alt="Logo" className="w-full h-full object-contain p-0.5 bg-white" />
+                <div className="h-8 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
+                  <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground leading-tight">Market Research Agentic Suite</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Powered by BGSW/BDO</p>
+                  <p className="text-xs font-bold text-foreground leading-tight">Tarka</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Powered by BGSW/BDO & BUD</p>
                 </div>
               </div>
               <button
@@ -411,7 +411,7 @@ export function ChatLayout({
                         {user?.display_name || "User"}
                       </p>
                       <p className="text-[10px] text-muted-foreground capitalize">
-                        {user?.role?.replace("_", " ") || ""}
+                        {({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ") || ""}
                       </p>
                     </div>
                     <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />

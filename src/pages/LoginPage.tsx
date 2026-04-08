@@ -52,16 +52,16 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo & Branding */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
+          <div className="flex items-center justify-center rounded-2xl bg-white shadow-lg overflow-hidden px-5 py-3">
             <img
-              src="/image.png"
-              alt="MRA Logo"
-              className="h-full w-full rounded-2xl object-contain bg-white p-1"
+              src="/image1.png"
+              alt="Tarka Logo"
+              className="h-16 w-auto object-contain"
             />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Market Research Agentic Suite
+              Tarka
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Powered by BGSW / BDO

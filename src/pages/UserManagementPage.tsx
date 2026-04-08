@@ -19,9 +19,9 @@ import { Pagination } from "@/components/ui/pagination";
 const PAGE_SIZE = 10;
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Shield }> = {
-  super_admin: { label: "Super Admin", color: boschPurple[50], bg: boschPurple[95], icon: ShieldCheck },
-  admin: { label: "Admin", color: boschBlue[50], bg: boschBlue[95], icon: Shield },
-  assistant: { label: "Assistant", color: boschGreen[50], bg: boschGreen[95], icon: UserCog },
+  super_admin: { label: "Platform Owner", color: boschPurple[50], bg: boschPurple[95], icon: ShieldCheck },
+  admin: { label: "Functional Head", color: boschBlue[50], bg: boschBlue[95], icon: Shield },
+  assistant: { label: "Functional OFE", color: boschGreen[50], bg: boschGreen[95], icon: UserCog },
   user: { label: "Unassigned", color: boschGray[50], bg: boschGray[95], icon: Users },
 };
 
@@ -113,9 +113,9 @@ export default function UserManagementPage() {
                 className="bg-card border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="all">All Roles</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="assistant">Assistant</option>
+                <option value="super_admin">Platform Owner</option>
+                <option value="admin">Functional Head</option>
+                <option value="assistant">Functional OFE</option>
                 <option value="user">Unassigned</option>
               </select>
             </div>
@@ -135,8 +135,8 @@ export default function UserManagementPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: "Total Users", value: statCounts.total, color: boschBlue[50], bg: boschBlue[95], icon: Users },
-              { label: "Admins", value: statCounts.admins, color: boschBlue[50], bg: boschBlue[95], icon: Shield },
-              { label: "Assistants", value: statCounts.assistants, color: boschGreen[50], bg: boschGreen[95], icon: UserCog },
+              { label: "Functional Heads", value: statCounts.admins, color: boschBlue[50], bg: boschBlue[95], icon: Shield },
+              { label: "Functional OFEs", value: statCounts.assistants, color: boschGreen[50], bg: boschGreen[95], icon: UserCog },
               { label: "Unassigned", value: statCounts.unassigned, color: boschGray[50], bg: boschGray[95], icon: Users },
             ].map((stat, i) => (
               <motion.div
@@ -382,8 +382,8 @@ function CreateUserForm({ isSuperAdmin, onClose }: { isSuperAdmin: boolean; onCl
             onChange={(e) => setRole(e.target.value as "admin" | "assistant")}
             className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="admin">Admin</option>
-            <option value="assistant">Assistant</option>
+            <option value="admin">Functional Head</option>
+            <option value="assistant">Functional OFE</option>
           </select>
         </div>
       )}
@@ -479,9 +479,9 @@ function EditUserForm({ user, isSuperAdmin, onClose }: { user: UserResponse; isS
             <label className="text-sm font-medium text-foreground">Role</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}
               className="mt-1.5 w-full px-3 py-2.5 text-sm rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="super_admin">Super Admin</option>
-              <option value="admin">Admin</option>
-              <option value="assistant">Assistant</option>
+              <option value="super_admin">Platform Owner</option>
+              <option value="admin">Functional Head</option>
+              <option value="assistant">Functional OFE</option>
               <option value="user">Unassigned</option>
             </select>
           </div>

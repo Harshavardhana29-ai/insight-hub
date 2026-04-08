@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, GitBranch, Edit, Trash2, Bot, Database,
-  Workflow, Zap, Search, X, ChevronDown, Loader2, Download, GlobeLock,
+  Workflow, Zap, Search, X, ChevronDown, Loader2, Download, GlobeLock, Check,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
@@ -165,6 +165,16 @@ export default function WorkflowPage() {
   const workflows = workflowsData?.items ?? [];
   const allDataSources = allDataSourcesData?.items ?? [];
   const topics = topicsList ?? [];
+
+  // Set of title+topic keys the user already has (to detect synced workflows)
+  const mySyncedKeys = useMemo(() => {
+    const keys = new Set<string>();
+    workflows.forEach(w => keys.add(`${w.title}::${w.topic}`));
+    return keys;
+  }, [workflows]);
+
+  const isWorkflowSynced = (workflow: WorkflowResponse) => mySyncedKeys.has(`${workflow.title}::${workflow.topic}`);
+
   const topicAgents: Record<string, string[]> = useMemo(() => {
     if (!topicAgentMap?.mapping) return {};
     const result: Record<string, string[]> = {};
@@ -494,16 +504,22 @@ export default function WorkflowPage() {
                     )}
                     <StatusIndicator status={workflow.status} />
                     {activeTab === "public" ? (
-                      <button
-                        onClick={() => syncMutation.mutate(workflow.id)}
-                        disabled={syncMutation.isPending}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
-                        style={{ backgroundColor: boschBlue[50] }}
-                        title="Sync to my collection"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Sync
-                      </button>
+                      isWorkflowSynced(workflow) ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
+                          <Check className="w-3.5 h-3.5" /> Synced
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => syncMutation.mutate(workflow.id)}
+                          disabled={syncMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                          style={{ backgroundColor: boschBlue[50] }}
+                          title="Sync to my collection"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Sync
+                        </button>
+                      )
                     ) : (
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
