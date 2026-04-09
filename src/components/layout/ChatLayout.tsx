@@ -172,8 +172,8 @@ export function ChatLayout({
             {/* Sidebar Header */}
             <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
               <div className="flex items-center gap-2.5">
-                <div className="h-6 rounded-sm overflow-hidden flex items-center justify-center px-0.5 ">
-                  <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
+                <div className="h-4 rounded-sm overflow-hidden flex items-center justify-center px-0.5 ">
+                  <img src="/bosch-logo2.png" alt="Logo" className="h-full w-auto" />
                 </div>
                 <div>
                   {/* <p className="text-xs font-bold text-foreground leading-tight">Tarka</p> */}

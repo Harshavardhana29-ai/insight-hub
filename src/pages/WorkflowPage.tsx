@@ -197,8 +197,20 @@ export default function WorkflowPage() {
   const topicAgents: Record<string, string[]> = useMemo(() => {
     if (!topicAgentMap?.mapping) return {};
     const result: Record<string, string[]> = {};
+    // Collect agents mapped to "All" — they apply to every topic
+    const allTopicAgents = [
+      ...((topicAgentMap.mapping["All"] ?? []) as AgentResponse[]),
+      ...((topicAgentMap.mapping["all"] ?? []) as AgentResponse[]),
+    ].map((a) => a.name);
     for (const [topic, agents] of Object.entries(topicAgentMap.mapping)) {
-      result[topic] = agents.map((a: AgentResponse) => a.name);
+      const names = (agents as AgentResponse[]).map((a) => a.name);
+      // Merge "All" agents into every topic
+      if (topic !== "All" && topic !== "all") {
+        const merged = new Set([...names, ...allTopicAgents]);
+        result[topic] = Array.from(merged);
+      } else {
+        result[topic] = names;
+      }
     }
     return result;
   }, [topicAgentMap]);
@@ -237,12 +249,26 @@ export default function WorkflowPage() {
   const { data: availableAgentsFromApi } = useAgentsByTopics(relevantTopics);
   const { data: allAgentsFromApi } = useAgents();
 
-  const availableAgents = useMemo(() => {
-    if (sourceSelectionMode === "prompt_only") {
-      return (allAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name, description: a.description, api_url: a.api_url }));
+  // Agents mapped to topic "All" — they work for any topic
+  const allTopicAgentIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (topicAgentMap?.mapping) {
+      for (const a of (topicAgentMap.mapping["All"] ?? []) as AgentResponse[]) ids.add(a.id);
+      for (const a of (topicAgentMap.mapping["all"] ?? []) as AgentResponse[]) ids.add(a.id);
     }
-    return (availableAgentsFromApi ?? []).map(a => ({ id: a.id, name: a.name, description: a.description, api_url: a.api_url }));
-  }, [sourceSelectionMode, availableAgentsFromApi, allAgentsFromApi]);
+    return ids;
+  }, [topicAgentMap]);
+
+  const availableAgents = useMemo(() => {
+    const mapAgent = (a: AgentResponse) => ({
+      id: a.id, name: a.name, description: a.description, api_url: a.api_url,
+      isAllTopics: allTopicAgentIds.has(a.id),
+    });
+    if (sourceSelectionMode === "prompt_only") {
+      return (allAgentsFromApi ?? []).map(mapAgent);
+    }
+    return (availableAgentsFromApi ?? []).map(mapAgent);
+  }, [sourceSelectionMode, availableAgentsFromApi, allAgentsFromApi, allTopicAgentIds]);
 
   // Filter individual sources by topic filter
   const filteredIndividualSources = useMemo(() => {
@@ -780,6 +806,11 @@ export default function WorkflowPage() {
                             </div>
                             <span className="font-semibold text-sm text-foreground leading-tight">{agent.name}</span>
                           </div>
+                          {agent.isAllTopics && (
+                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                              All Topics
+                            </span>
+                          )}
                           {agent.description && (
                             <p className="text-xs text-muted-foreground leading-relaxed">{agent.description}</p>
                           )}

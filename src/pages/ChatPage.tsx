@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, GitBranch, ChevronDown, Loader2, Bot,
-  Download, CheckCircle2, AlertTriangle, Clock, ChevronRight, User,
+  Download, CheckCircle2, AlertTriangle, Clock, ChevronRight, User, Copy, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +109,14 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
   const workflowPickerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = useCallback((id: string, content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
 
   const { data: workflowsData } = useWorkflows();
   const workflowsList = workflowsData?.items ?? [];
@@ -331,7 +339,16 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               >
                 {msg.role === "user" ? (
                   /* User bubble */
-                  <div className="flex justify-end">
+                  <div className="flex justify-end items-end gap-2">
+                    <button
+                      onClick={() => handleCopy(msg.id, msg.content)}
+                      className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0 mb-1"
+                      title="Copy message"
+                    >
+                      {copiedId === msg.id
+                        ? <Check className="w-3.5 h-3.5 text-green-500" />
+                        : <Copy className="w-3.5 h-3.5" />}
+                    </button>
                     <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3">
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       {msg.workflow_title && (
@@ -379,7 +396,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
                             );
                           })()}
                           {msg.message_type === "report" && (
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                            <div className="flex items-center gap-2 mt-2">
                               <Button
                                 onClick={() => handleDownload("pdf", msg.content, msg.workflow_title || "Report")}
                                 variant="ghost" size="sm"
