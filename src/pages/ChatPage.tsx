@@ -139,7 +139,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
       if (runStatusData.status === "completed" || runStatusData.status === "failed") {
         setStatus(runStatusData.status as RunStatus);
         // Fetch final logs
-        if (activeRunId) runsApi.logs(activeRunId).then(setLogs).catch(() => {});
+        if (activeRunId) runsApi.logs(activeRunId).then(setLogs).catch(() => { });
       }
     }
   }, [runStatusData, activeRunId]);
@@ -266,12 +266,12 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               transition={{ duration: 0.5 }}
               className="text-center max-w-2xl mx-auto"
             >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Bot className="w-8 h-8 text-primary" />
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Tarka
-              </h1>
+              <div className="h-12 rounded-sm overflow-hidden flex items-center justify-center px-0.5 ">
+                <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
+              </div>
               <p className="text-muted-foreground text-sm md:text-base mb-8">
                 What do you want to know today?
               </p>
@@ -485,11 +485,10 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               <div className="relative" ref={workflowPickerRef}>
                 <button
                   onClick={() => setShowWorkflowPicker(!showWorkflowPicker)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                    selectedWorkflow
-                      ? "bg-primary/10 text-primary hover:bg-primary/20"
-                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${selectedWorkflow
+                    ? "bg-primary/10 text-primary hover:bg-primary/20"
+                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
                 >
                   <GitBranch className={`w-3.5 h-3.5 ${selectedWorkflow ? "text-primary" : ""}`} />
                   <span className="hidden sm:inline">{selectedWorkflow?.title || "Workflow"}</span>
@@ -512,11 +511,10 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
                           <button
                             key={w.id}
                             onClick={() => { setSelectedWorkflowId(w.id); setShowWorkflowPicker(false); }}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                              selectedWorkflowId === w.id
-                                ? "bg-primary/10 text-primary font-medium"
-                                : "text-foreground hover:bg-muted"
-                            }`}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedWorkflowId === w.id
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-foreground hover:bg-muted"
+                              }`}
                           >
                             <div className="flex items-center gap-2">
                               <GitBranch className="w-3.5 h-3.5 shrink-0" />
@@ -562,7 +560,7 @@ export default function ChatPage({ sessionId, cronReport, onClearCronReport }: C
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-              Powered by BGSW/BDO & BUD · Tarka
+              © 2026-2030 Bosch Global Software Technologies. All rights reserved.
             </p>
           </div>
         </div>

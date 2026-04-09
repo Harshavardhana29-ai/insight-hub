@@ -172,12 +172,13 @@ export function ChatLayout({
             {/* Sidebar Header */}
             <div className="p-3 flex items-center justify-between border-b border-sidebar-border">
               <div className="flex items-center gap-2.5">
-                <div className="h-6 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
+                <div className="h-6 rounded-sm overflow-hidden flex items-center justify-center px-0.5 ">
                   <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground leading-tight">Tarka</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Powered by BGSW/BDO & BUD</p>
+                  {/* <p className="text-xs font-bold text-foreground leading-tight">Tarka</p> */}
+                  <p className="text-[10px] text-muted-foreground leading-tight">Powered by</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">BGSW/BDO, BGSW/BUD</p>
                 </div>
               </div>
               <button
@@ -434,8 +435,9 @@ export function ChatLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
         {/* Top Bar */}
-        <header className="h-12 border-b border-border bg-background/80 backdrop-blur-sm shrink-0 flex items-center justify-between px-3 md:px-4">
-          <div className="flex items-center gap-2">
+        <header className="h-12 border-b border-border bg-background/80 backdrop-blur-sm shrink-0 flex items-center px-3 md:px-4">
+          {/* Left: sidebar toggle */}
+          <div className="flex items-center w-8 shrink-0">
             {!sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -445,6 +447,17 @@ export function ChatLayout({
               </button>
             )}
           </div>
+
+          {/* Center: logo + tagline */}
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <div className="h-6 rounded-sm overflow-hidden flex items-center justify-center px-0.5 shrink-0">
+              <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain dark:text-white" />
+            </div>
+            <span className="text-muted-foreground/30 text-sm font-light select-none">|</span>
+            <span className="text-xs font-semibold text-[#007bc0] tracking-wide">Agentic BUD as an Enterprise</span>
+          </div>
+
+          {/* Right: dark mode + settings */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setDarkMode(!darkMode)}

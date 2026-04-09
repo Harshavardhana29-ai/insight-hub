@@ -106,7 +106,7 @@ export function AssistantLayout() {
           <div>
             <p className="text-xs font-bold text-foreground leading-tight">Tarka</p>
             <p className="text-[10px] text-muted-foreground leading-tight">
-              Functional OFE — managing for {adminName || user?.display_name || "Admin"}
+              Functional OFE — managing for {adminName ?? "…"}
             </p>
           </div>
         </div>
@@ -183,8 +183,7 @@ export function AssistantLayout() {
               <div className="px-3 py-2 border-b border-border">
                 <p className="text-sm font-semibold text-foreground">{user?.display_name}</p>
                 <p className="text-xs text-muted-foreground">{`${user?.ntid}@bosch.com` || user?.ntid}</p>
-                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ")}</p>
-              </div>
+                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ")}</p>              </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}><LogOut className="w-4 h-4 mr-2" /> Log out</DropdownMenuItem>
             </DropdownMenuContent>

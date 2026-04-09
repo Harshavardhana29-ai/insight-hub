@@ -884,7 +884,7 @@ export async function generatePdfReport(opts: ExportOptions): Promise<void> {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
   pdf.setTextColor(...hexToRgb(boschBlue[50]));
-  pdf.text("Powered by BGSW/BDO & BUD", PW / 2, cy, { align: "center" });
+  pdf.text("Powered by BGSW/BDO, BGSW/BUD", PW / 2, cy, { align: "center" });
 
   // ── Footer area on cover page ──
   // Separator line above footer

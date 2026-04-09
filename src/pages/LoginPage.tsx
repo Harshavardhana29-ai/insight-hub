@@ -51,20 +51,20 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo & Branding */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex items-center justify-center rounded-2xl bg-white shadow-lg overflow-hidden px-5 py-3">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex items-center justify-center rounded-2xl   overflow-hidden px-5 py-3">
             <img
               src="/image1.png"
               alt="Tarka Logo"
-              className="h-16 w-auto object-contain"
+              className="h-16 w-auto object-contain bg-none"
             />
           </div>
           <div>
             {/* <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Tarka
             </h1> */}
-            <p className="mt-1 text-sm text-muted-foreground">
-              Powered by BGSW / BDO
+            <p className=" text-sm text-muted-foreground">
+              Powered by BGSW/BDO, BGSW/BUD
             </p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground/60">
-          © 2026 BGSW / BDO — Market Research Agentic Suite
+          © 2026-2030 Bosch Global Software Technologies. All rights reserved.
         </p>
       </div>
     </div>

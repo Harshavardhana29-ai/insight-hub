@@ -51,7 +51,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-bold text-primary-foreground leading-tight">Tarka</h1>
-            <p className="text-[11px] text-primary-foreground/60 leading-tight">Powered by BGSW/BDO & BUD</p>
+            <p className="text-[11px] text-primary-foreground/60 leading-tight">Powered by BGSW/BDO, BGSW/BUD</p>
           </div>
         </div>
 

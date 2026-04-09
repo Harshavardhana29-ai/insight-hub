@@ -22,7 +22,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { boschBlue, boschGreen } from "@/lib/bosch-colors";
 import { Pagination } from "@/components/ui/pagination";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 export default function KnowledgeBasePage() {
   const { user } = useAuth();
@@ -80,6 +80,11 @@ export default function KnowledgeBasePage() {
     (sourcesData?.items ?? []).forEach(s => { if (s.url) urls.add(s.url); });
     return urls;
   }, [sourcesData]);
+
+  const truncate = (text, limit = 30) => {
+    if (!text) return "";
+    return text.length > limit ? text.slice(0, limit) + "..." : text;
+  };
 
   const isSourceSynced = (source: DataSourceResponse) => mySyncedUrls.has(source.url);
 
@@ -139,22 +144,20 @@ export default function KnowledgeBasePage() {
           <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
             <button
               onClick={() => setActiveTab("mine")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "mine"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "mine"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               <Database className="w-3.5 h-3.5" />
               My Sources
             </button>
             <button
               onClick={() => setActiveTab("public")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "public"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "public"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               <GlobeLock className="w-3.5 h-3.5" />
               Public Sources
@@ -194,118 +197,120 @@ export default function KnowledgeBasePage() {
               <thead>
                 <tr className="border-b border-primary bg-primary">
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Source Name</th>
-                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Type</th>
+                  <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">URL</th>
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Topic</th>
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Tags</th>
                   <th className="text-left text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Uploaded</th>
-                  
+
                   <th className="text-right text-xs font-semibold text-primary-foreground px-5 py-3.5 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                     <td colSpan={6} className="px-5 py-12 text-center">
-                       <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                       <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
-                     </td>
-                   </tr>
-                 ) : sources.length === 0 ? (
-                   <tr>
-                     <td colSpan={6} className="px-5 py-12 text-center">
+                    <td colSpan={6} className="px-5 py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2">Loading data sources…</p>
+                    </td>
+                  </tr>
+                ) : sources.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-12 text-center">
                       <Database className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">No data sources found</p>
                     </td>
                   </tr>
                 ) : (
                   sources.map((source, i) => (
-                  <motion.tr
-                    key={source.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="border-b border-border last:border-0 hover:bg-accent/40 transition-colors"
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-                          <Globe className="w-4 h-4 text-accent-foreground" />
+                    <motion.tr
+                      key={source.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="border-b border-border last:border-0 hover:bg-accent/40 transition-colors"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                            <Globe className="w-4 h-4 text-accent-foreground" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground truncate">{source.title}</span>
                         </div>
-                        <span className="text-sm font-medium text-foreground truncate">{source.title}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-muted-foreground">{source.url ? "URL" : "File"}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <TopicBadge topic={source.topic} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {source.tags.map((tag) => (
-                          <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent rounded-md text-[11px] font-medium text-accent-foreground">
-                            <Tag className="w-2.5 h-2.5" />
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {source.created_at ? new Date(source.created_at).toLocaleDateString() : "—"}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {source.is_public && activeTab === "mine" && (
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold mr-1"
-                            style={{ backgroundColor: boschGreen[95], color: boschGreen[50] }}
-                          >
-                            Public
-                          </span>
-                        )}
-                        {activeTab === "public" ? (
-                          isSourceSynced(source) ? (
-                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
-                              <Check className="w-3.5 h-3.5" /> Synced
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-sm text-muted-foreground">
+                          {truncate(source.url, 30)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <TopicBadge topic={source.topic} />
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {source.tags.map((tag) => (
+                            <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent rounded-md text-[11px] font-medium text-accent-foreground">
+                              <Tag className="w-2.5 h-2.5" />
+                              {tag}
                             </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {source.created_at ? new Date(source.created_at).toLocaleDateString() : "—"}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {source.is_public && activeTab === "mine" && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold mr-1"
+                              style={{ backgroundColor: boschGreen[95], color: boschGreen[50] }}
+                            >
+                              Public
+                            </span>
+                          )}
+                          {activeTab === "public" ? (
+                            isSourceSynced(source) ? (
+                              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
+                                <Check className="w-3.5 h-3.5" /> Synced
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => syncMutation.mutate(source.id)}
+                                disabled={syncMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                                style={{ backgroundColor: boschBlue[50] }}
+                                title="Sync to my collection"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                Sync
+                              </button>
+                            )
                           ) : (
-                            <button
-                              onClick={() => syncMutation.mutate(source.id)}
-                              disabled={syncMutation.isPending}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
-                              style={{ backgroundColor: boschBlue[50] }}
-                              title="Sync to my collection"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              Sync
-                            </button>
-                          )
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setEditingSource(source)}
-                              className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(source.id)}
-                              disabled={deleteMutation.isPending}
-                              className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
+                            <>
+                              <button
+                                onClick={() => setEditingSource(source)}
+                                className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(source.id)}
+                                disabled={deleteMutation.isPending}
+                                className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
                 )}
               </tbody>
             </table>

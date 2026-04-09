@@ -200,6 +200,11 @@
   background: transparent;
 }
 
+/* ── Dark-mode logo tint → #007bc0 ── */
+.dark img[src="/image1.png"] {
+  filter: brightness(0) invert(37%) sepia(86%) saturate(1035%) hue-rotate(175deg) brightness(95%) contrast(101%);
+}
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   border-radius: 999px;
