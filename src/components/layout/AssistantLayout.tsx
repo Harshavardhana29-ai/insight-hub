@@ -43,10 +43,10 @@ export function AssistantLayout() {
 
   // Fetch admin name for assistants
   useEffect(() => {
-    if (user?.admin_id) {
-      usersApi.get(user.admin_id).then(admin => setAdminName(admin.display_name)).catch(() => {});
+    if (user?.role === "assistant") {
+      usersApi.getMyAdmin().then(admin => setAdminName(admin.display_name)).catch(() => {});
     }
-  }, [user?.admin_id]);
+  }, [user?.id]);
 
   const handleSyncAll = async () => {
     setSyncing(true);
@@ -98,62 +98,20 @@ export function AssistantLayout() {
   return (
     <div className="flex flex-col h-screen w-full bg-background">
       {/* Top Bar */}
-      <header className="h-12 border-b border-border bg-background/80 backdrop-blur-sm shrink-0 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <div className="h-8 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border">
+      <header className="h-12 border-b border-border bg-background/80 backdrop-blur-sm shrink-0 flex items-center justify-between px-3 md:px-4">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-7 rounded-sm overflow-hidden bg-white flex items-center justify-center px-0.5 shadow-sm border border-border shrink-0">
             <img src="/image1.png" alt="Logo" className="h-full w-auto object-contain" />
           </div>
-          <div>
-            <p className="text-xs font-bold text-foreground leading-tight">Tarka</p>
-            <p className="text-[10px] text-muted-foreground leading-tight">
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-foreground leading-tight truncate">Tarka</p>
+            <p className="text-[10px] text-muted-foreground leading-tight truncate">
               Functional OFE — managing for {adminName ?? "…"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Sync All Button */}
-          {!syncDone ? (
-            <button
-              onClick={handleSyncAll}
-              disabled={syncing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
-              style={{ backgroundColor: boschBlue[50] }}
-              title="Sync all public data sources and workflows"
-            >
-              {syncing ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Syncing…</>
-              ) : (
-                <><Download className="w-3.5 h-3.5" /> Sync All</>
-              )}
-            </button>
-          ) : (
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
-              <Check className="w-3.5 h-3.5" /> All Synced
-            </span>
-          )}
-
-          {/* Tab Navigation */}
-          <div className="flex gap-1 bg-muted rounded-lg p-0.5">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
-                  activeTab === tab.id
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="w-px h-6 bg-border mx-1" />
-
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -164,7 +122,7 @@ export function AssistantLayout() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors">
+              <button className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors">
                 <Avatar className="w-6 h-6">
                   <AvatarFallback
                     className="text-[9px] font-bold text-white"
@@ -183,7 +141,8 @@ export function AssistantLayout() {
               <div className="px-3 py-2 border-b border-border">
                 <p className="text-sm font-semibold text-foreground">{user?.display_name}</p>
                 <p className="text-xs text-muted-foreground">{`${user?.ntid}@bosch.com` || user?.ntid}</p>
-                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ")}</p>              </div>
+                <p className="text-[10px] text-muted-foreground capitalize mt-0.5">{({ super_admin: "Platform Owner", admin: "Functional Head", assistant: "Functional OFE", user: "User" } as Record<string, string>)[user?.role ?? ""] || user?.role?.replace("_", " ")}</p>
+              </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}><LogOut className="w-4 h-4 mr-2" /> Log out</DropdownMenuItem>
             </DropdownMenuContent>
@@ -201,6 +160,48 @@ export function AssistantLayout() {
           backgroundRepeat: "no-repeat",
         }}
       />
+
+      {/* Tab Navigation + Sync All */}
+      <div className="shrink-0 border-b border-border bg-background px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1 bg-muted rounded-lg p-0.5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                activeTab === tab.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Sync All — in content bar, not header */}
+        {!syncDone ? (
+          <button
+            onClick={handleSyncAll}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+            style={{ backgroundColor: boschBlue[50] }}
+            title="Sync all public data sources and workflows"
+          >
+            {syncing ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Syncing…</>
+            ) : (
+              <><Download className="w-3.5 h-3.5" /> Sync All</>
+            )}
+          </button>
+        ) : (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-100">
+            <Check className="w-3.5 h-3.5" /> All Synced
+          </span>
+        )}
+      </div>
 
       {/* Page Content */}
       <main className="flex-1 flex flex-col overflow-hidden">

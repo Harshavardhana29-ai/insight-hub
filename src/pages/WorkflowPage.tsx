@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Plus, GitBranch, Edit, Trash2, Bot, Database,
+  Plus, GitBranch, Edit, Trash2, Bot, Database, RefreshCw,
   Workflow, Zap, Search, X, ChevronDown, Loader2, Download, GlobeLock, Check,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
@@ -156,6 +156,26 @@ export default function WorkflowPage() {
       toast({ title: "Failed to sync workflow", variant: "destructive" });
     },
   });
+
+  const [syncingAll, setSyncingAll] = useState(false);
+  const handleSyncAll = async () => {
+    setSyncingAll(true);
+    let synced = 0, skipped = 0;
+    try {
+      const publicWorkflows = await workflowsApi.listPublic();
+      for (const wf of publicWorkflows.items) {
+        try { await workflowsApi.syncPublic(wf.id); synced++; } catch { skipped++; }
+      }
+      qc.invalidateQueries({ queryKey: ["workflows"] });
+      qc.invalidateQueries({ queryKey: ["workflow-stats"] });
+      qc.invalidateQueries({ queryKey: ["public-workflows"] });
+      toast({ title: synced > 0 ? `Synced ${synced} workflow(s)${skipped ? ` (${skipped} already synced)` : ""}` : "All workflows already synced" });
+    } catch {
+      toast({ title: "Failed to sync all", variant: "destructive" });
+    } finally {
+      setSyncingAll(false);
+    }
+  };
   const { data: topicsList } = useTopics();
   const { data: allDataSourcesData } = useDataSources();
   const { data: topicAgentMap } = useTopicAgentMapping();
@@ -390,27 +410,40 @@ export default function WorkflowPage() {
 
         {/* Tabs for Admin: My Workflows / Public Workflows */}
         {showPublicTab && (
-          <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
-            <button
-              onClick={() => setActiveTab("mine")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "mine"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              <GitBranch className="w-3.5 h-3.5" />
-              My Workflows
-            </button>
-            <button
-              onClick={() => setActiveTab("public")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "public"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              <GlobeLock className="w-3.5 h-3.5" />
-              Public Workflows
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1 bg-muted rounded-lg p-0.5 w-fit">
+              <button
+                onClick={() => setActiveTab("mine")}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "mine"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+                My Workflows
+              </button>
+              <button
+                onClick={() => setActiveTab("public")}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${activeTab === "public"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                <GlobeLock className="w-3.5 h-3.5" />
+                Public Workflows
+              </button>
+            </div>
+            {activeTab === "public" && (
+              <button
+                onClick={handleSyncAll}
+                disabled={syncingAll}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-all disabled:opacity-50"
+                style={{ backgroundColor: boschBlue[50] }}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingAll ? "animate-spin" : ""}`} />
+                {syncingAll ? "Syncing…" : "Sync All"}
+              </button>
+            )}
           </div>
         )}
 

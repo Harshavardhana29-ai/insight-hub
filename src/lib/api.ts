@@ -509,6 +509,8 @@ export const usersApi = {
 
   listMyAssistants: () => request<UserResponse[]>("/users/my-assistants"),
 
+  getMyAdmin: () => request<UserResponse>("/users/my-admin"),
+
   addAssistant: (data: UserCreatePayload) =>
     request<UserResponse>("/users/assistants", {
       method: "POST",
