@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Globe, Filter, Trash2, RefreshCw,
+  Search, Plus, Globe, Filter, Trash2, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown,
   Database, Tag, X, Loader2, Pencil, Download, GlobeLock, Check,
 } from "lucide-react";
 import { TopicBadge } from "@/components/ui/TopicBadge";
@@ -90,7 +90,7 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  const sources = activeTab === "public"
+  const rawSources = activeTab === "public"
     ? (publicSourcesData?.items ?? [])
     : (sourcesData?.items ?? []);
 
@@ -107,6 +107,37 @@ export default function KnowledgeBasePage() {
   };
 
   const isSourceSynced = (source: DataSourceResponse) => mySyncedUrls.has(source.url);
+
+  type SortField = "title" | "topic";
+  type SortDir = "asc" | "desc";
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-50" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="w-3 h-3" />
+      : <ArrowDown className="w-3 h-3" />;
+  };
+
+  const sources = useMemo(() => {
+    if (!sortField) return rawSources;
+    return [...rawSources].sort((a, b) => {
+      const av = (a[sortField] ?? "").toLowerCase();
+      const bv = (b[sortField] ?? "").toLowerCase();
+      const cmp = av.localeCompare(bv);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [rawSources, sortField, sortDir]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -228,9 +259,23 @@ export default function KnowledgeBasePage() {
           <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-primary bg-primary">
-                <th className="text-left text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">Source Name</th>
+                <th className="px-3 py-3 whitespace-nowrap">
+                  <button
+                    onClick={() => handleSort("title")}
+                    className="flex items-center gap-1 text-xs font-semibold text-primary-foreground uppercase tracking-wide hover:opacity-80 transition-opacity"
+                  >
+                    Source Name <SortIcon field="title" />
+                  </button>
+                </th>
                 <th className="text-left text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">URL</th>
-                <th className="text-left text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">Topic</th>
+                <th className="px-3 py-3 whitespace-nowrap">
+                  <button
+                    onClick={() => handleSort("topic")}
+                    className="flex items-center gap-1 text-xs font-semibold text-primary-foreground uppercase tracking-wide hover:opacity-80 transition-opacity"
+                  >
+                    Topic <SortIcon field="topic" />
+                  </button>
+                </th>
                 <th className="text-left text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">Tags</th>
                 <th className="text-left text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">Uploaded</th>
                 <th className="text-right text-xs font-semibold text-primary-foreground px-3 py-3 uppercase tracking-wide whitespace-nowrap">Actions</th>
